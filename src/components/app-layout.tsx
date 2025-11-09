@@ -24,7 +24,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 import { ChatGPTSidebar } from "./common/chatgpt-sidebar";
 import { NotesPanel } from "./common/notes-panel";
@@ -55,7 +54,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [rightSidebarTab, setRightSidebarTab] = useState<"profile" | "chat">(
-    "profile",
+    "profile"
   );
   const [notesHeight, setNotesHeight] = useState(200);
   const { user: authUser, signOut } = useAuthenticator();
@@ -112,7 +111,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           };
           sessionStorage.setItem(
             "riskguard-chats",
-            JSON.stringify([initialChat]),
+            JSON.stringify([initialChat])
           );
         }
       }
@@ -162,7 +161,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         };
         sessionStorage.setItem(
           "riskguard-chats",
-          JSON.stringify([initialChat]),
+          JSON.stringify([initialChat])
         );
       }
     }
@@ -229,7 +228,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <aside
           className={cn(
             "flex-shrink-0 border-r border-border bg-sidebar backdrop-blur-support transition-all duration-300 flex flex-col",
-            leftSidebarOpen ? "w-64" : "w-16",
+            leftSidebarOpen ? "w-64" : "w-16"
           )}
         >
           <div className="p-2 border-b border-sidebar-border flex-shrink-0">
@@ -257,7 +256,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       variant={isActive ? "secondary" : "ghost"}
                       className={cn(
                         "w-full justify-start gap-3",
-                        !leftSidebarOpen && "justify-center px-2",
+                        !leftSidebarOpen && "justify-center px-2"
                       )}
                     >
                       <item.icon className="h-5 w-5 flex-shrink-0" />
