@@ -1,14 +1,8 @@
 // import { ThemeToggle } from "../../theme-toggle";
-import { useEcoAuth } from "@/authentication/use-eco-auth-hook";
 import { Button } from "../../ui/button";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 
 export default function HomePage() {
-  const navigate = useNavigate();
-
   return (
     <div className="flex min-h-screen flex-col">
       {/* Hero Section */}

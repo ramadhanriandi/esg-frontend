@@ -16,5 +16,5 @@ export type EcoAuthContextType = {
 };
 
 export const EcoAuthContext = createContext<EcoAuthContextType | undefined>(
-  undefined
+  undefined,
 );

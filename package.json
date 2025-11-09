@@ -68,18 +68,17 @@
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "zod": "4.1.12"
-  
-  
   },
-  
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.2.0", 
+    "@aws-amplify/backend": "^1.5.0",
+    "@aws-amplify/backend-cli": "^1.2.9",
+    "@typescript-eslint/eslint-plugin": "^7.2.0",
     "@typescript-eslint/parser": "^7.2.0",
     "aws-cdk": "^2.138.0",
     "aws-cdk-lib": "^2.138.0",
     "constructs": "^10.3.0",
     "esbuild": "^0.20.2",
-    "tsx": "^4.7.2",  
+    "tsx": "^4.7.2",
     "@eslint/js": "^9.36.0",
     "@tailwindcss/postcss": "^4.1.13",
     "@tailwindcss/vite": "^4.1.13",
@@ -107,7 +106,6 @@
     "vite": "^7.1.7",
     "vite-plugin-static-copy": "^3.1.4",
     "vite-tsconfig-paths": "^5.1.4"
-
   },
   "msw": {
     "workerDirectory": [

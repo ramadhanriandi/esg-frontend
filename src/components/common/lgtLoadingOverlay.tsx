@@ -19,6 +19,6 @@ export default function lgtLoadingOverlay({
         <p className="text-lg font-medium text-foreground">{message}</p>
       </div>
     </div>,
-    document.body // Render directly to body, outside all containers
+    document.body, // Render directly to body, outside all containers
   );
 }

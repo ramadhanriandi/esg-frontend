@@ -39,7 +39,7 @@ const stripImages = (s: string) =>
     .replace(/<img[^>]*>/gi, "[image removed]") // html <img>
     .replace(
       /data:image\/[a-zA-Z]+;base64,[A-Za-z0-9+/=]+/g,
-      "[image removed]"
+      "[image removed]",
     ); // data URIs
 
 // Render assistant text with fenced code blocks ```lang\n...\n```
@@ -57,7 +57,7 @@ function AssistantContent({ text }: { text: string }) {
         parts.push(
           <p key={`p-${last}`} className="text-sm whitespace-pre-wrap">
             {chunk}
-          </p>
+          </p>,
         );
     }
     const lang = m[1] || "text";
@@ -69,7 +69,7 @@ function AssistantContent({ text }: { text: string }) {
         aria-label={`code-${lang}`}
       >
         <code>{code}</code>
-      </pre>
+      </pre>,
     );
     last = re.lastIndex;
   }
@@ -78,7 +78,7 @@ function AssistantContent({ text }: { text: string }) {
     parts.push(
       <p key="p-tail" className="text-sm whitespace-pre-wrap">
         {tail}
-      </p>
+      </p>,
     );
 
   return <>{parts}</>;
@@ -97,7 +97,7 @@ async function sendUserMessage(conversationId: string, content: string) {
 function openStream(
   conversationId: string,
   onDelta: (chunk: string) => void,
-  onDone: () => void
+  onDone: () => void,
 ) {
   // relaxed CORS posture: do not send credentials
   const es = new EventSource(STREAM_PATH(conversationId), {
@@ -122,7 +122,7 @@ export function ChatGPTSidebar() {
 
   // NEW: per-chat loading state
   const [loadingByChat, setLoadingByChat] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
 
   // NEW: one closer per chat so multiple streams can coexist
@@ -234,8 +234,8 @@ export function ChatGPTSidebar() {
     if (renamingChatId && renameValue.trim()) {
       setChats(
         chats.map((c) =>
-          c.id === renamingChatId ? { ...c, title: renameValue.trim() } : c
-        )
+          c.id === renamingChatId ? { ...c, title: renameValue.trim() } : c,
+        ),
       );
     }
     setRenamingChatId(null);
@@ -267,8 +267,8 @@ export function ChatGPTSidebar() {
 
     setChats((prev) =>
       prev.map((c) =>
-        c.id === chatId ? { ...c, messages: afterUserMessages } : c
-      )
+        c.id === chatId ? { ...c, messages: afterUserMessages } : c,
+      ),
     );
     setInput("");
 
@@ -280,8 +280,8 @@ export function ChatGPTSidebar() {
     ];
     setChats((prev) =>
       prev.map((c) =>
-        c.id === chatId ? { ...c, messages: withAssistantPlaceholder } : c
-      )
+        c.id === chatId ? { ...c, messages: withAssistantPlaceholder } : c,
+      ),
     );
 
     // 3) call backend & stream (per-chat loading)
@@ -300,18 +300,18 @@ export function ChatGPTSidebar() {
                 ? {
                     ...c,
                     messages: c.messages.map((m) =>
-                      m.id === asstId ? { ...m, content: draft } : m
+                      m.id === asstId ? { ...m, content: draft } : m,
                     ),
                   }
-                : c
-            )
+                : c,
+            ),
           );
         },
         () => {
           // stream ended (for this chat only)
           setChatLoading(chatId, false);
           streamClosersRef.current.delete(chatId);
-        }
+        },
       );
       streamClosersRef.current.set(chatId, close);
     } catch {
@@ -328,11 +328,11 @@ export function ChatGPTSidebar() {
                         content:
                           "Sorry, I couldn't reach the server. Please try again.",
                       }
-                    : m
+                    : m,
                 ),
               }
-            : c
-        )
+            : c,
+        ),
       );
       setChatLoading(chatId, false);
       streamClosersRef.current.delete(chatId);
@@ -375,7 +375,7 @@ export function ChatGPTSidebar() {
                         "flex items-center gap-1 px-3 py-1.5 rounded-md text-sm cursor-pointer whitespace-nowrap flex-shrink-0",
                         activeChat === chat.id
                           ? "bg-muted"
-                          : "hover:bg-muted/50"
+                          : "hover:bg-muted/50",
                       )}
                       onClick={() => {
                         // NOTE: Do NOT cancel other chats' streams on switch
@@ -451,7 +451,7 @@ export function ChatGPTSidebar() {
               key={message.id}
               className={cn(
                 "flex gap-3",
-                message.role === "user" ? "justify-end" : "justify-start"
+                message.role === "user" ? "justify-end" : "justify-start",
               )}
             >
               <div
@@ -459,7 +459,7 @@ export function ChatGPTSidebar() {
                   "max-w-[85%] rounded-lg p-3 relative group",
                   message.role === "user"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    : "bg-muted",
                 )}
               >
                 {message.role === "assistant" ? (

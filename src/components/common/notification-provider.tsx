@@ -21,7 +21,7 @@ interface NotificationContextType {
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
@@ -36,7 +36,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         setNotifications((prev) => prev.filter((n) => n.id !== id));
       }, 5000);
     },
-    []
+    [],
   );
 
   const removeNotification = (id: string) => {
@@ -57,7 +57,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
               notification.type === "error" &&
                 "bg-red-500/90 border-red-600 text-white",
               notification.type === "warning" &&
-                "bg-yellow-500/90 border-yellow-600 text-white"
+                "bg-yellow-500/90 border-yellow-600 text-white",
             )}
           >
             {notification.type === "success" && (

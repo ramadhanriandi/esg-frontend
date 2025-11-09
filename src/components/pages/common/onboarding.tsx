@@ -1,7 +1,3 @@
-"use client";
-
-import type React from "react";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 
 export default function OnboardingPage() {
@@ -41,7 +37,7 @@ export default function OnboardingPage() {
     checkAuth();
   }, [navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);

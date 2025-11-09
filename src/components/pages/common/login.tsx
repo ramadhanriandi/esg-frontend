@@ -1,7 +1,5 @@
 "use client";
 
-import type React from "react";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,7 +18,6 @@ import { useEcoAuth } from "@/authentication/use-eco-auth-hook";
 import { Form, useForm } from "react-hook-form";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
   const navigate = useNavigate();
 
   const authContext = useEcoAuth();
@@ -56,6 +53,7 @@ export default function LoginPage() {
       toast.error("Error:", {
         description: message,
       });
+      setError(message);
     }
   };
 
@@ -145,6 +143,12 @@ export default function LoginPage() {
                         placeholder="john@u.nus.edu"
                         required
                         value={formData.email}
+                        onChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            email: value.target.value,
+                          })
+                        }
                       />
                     </div>
                     <div className="grid gap-2">
@@ -154,6 +158,12 @@ export default function LoginPage() {
                         type="password"
                         required
                         value={formData.password}
+                        onChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            password: value.target.value,
+                          })
+                        }
                       />
                     </div>
                     {error && (

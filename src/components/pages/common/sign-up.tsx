@@ -1,7 +1,3 @@
-"use client";
-
-import type React from "react";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 
 export default function SignUpPage() {
   const [fullName, setFullName] = useState("");
@@ -25,7 +21,7 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);

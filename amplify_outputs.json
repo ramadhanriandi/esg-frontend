@@ -5,15 +5,9 @@
     "user_pool_client_id": "12cm101bh8llom1j5sojugcodm",
     "identity_pool_id": "ap-southeast-2:16b6396e-8160-4c52-ac9e-5550ec08ae03",
     "mfa_methods": [],
-    "standard_required_attributes": [
-      "email"
-    ],
-    "username_attributes": [
-      "email"
-    ],
-    "user_verification_types": [
-      "email"
-    ],
+    "standard_required_attributes": ["email"],
+    "username_attributes": ["email"],
+    "user_verification_types": ["email"],
     "mfa_configuration": "NONE",
     "password_policy": {
       "min_length": 8,
@@ -29,10 +23,7 @@
     "aws_region": "ap-southeast-2",
     "api_key": "da2-xftjgq5y2vh6jnu3krp7qg6524",
     "default_authorization_type": "API_KEY",
-    "authorization_types": [
-      "AMAZON_COGNITO_USER_POOLS",
-      "AWS_IAM"
-    ],
+    "authorization_types": ["AMAZON_COGNITO_USER_POOLS", "AWS_IAM"],
     "model_introspection": {
       "version": 1,
       "models": {
@@ -84,12 +75,7 @@
                   {
                     "allow": "public",
                     "provider": "apiKey",
-                    "operations": [
-                      "create",
-                      "update",
-                      "delete",
-                      "read"
-                    ]
+                    "operations": ["create", "update", "delete", "read"]
                   }
                 ]
               }

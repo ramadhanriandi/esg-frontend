@@ -17,7 +17,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
     <nav
       className={cn(
         "flex items-center space-x-2 text-sm text-muted-foreground",
-        className
+        className,
       )}
     >
       {items.map((item, index) => (

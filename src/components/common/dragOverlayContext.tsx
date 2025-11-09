@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext, useState } from 'react';
+import { createContext, type ReactNode, useContext, useState } from "react";
 
 interface DragOverlayContextProps {
   isDragging: boolean;
@@ -8,13 +8,15 @@ interface DragOverlayContextProps {
   setIsModalOpen: (value: boolean) => void;
 }
 
-const DragOverlayContext = createContext<DragOverlayContextProps | undefined>(undefined);
+const DragOverlayContext = createContext<DragOverlayContextProps | undefined>(
+  undefined,
+);
 
 export const DragOverlayProvider = ({ children }: { children: ReactNode }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDraggingDisabled, setIsDraggingDisabled] = useState(false);
-  const body = document.querySelector('body');
+  const body = document.querySelector("body");
 
   return (
     <DragOverlayContext.Provider
@@ -55,6 +57,7 @@ export const DragOverlayProvider = ({ children }: { children: ReactNode }) => {
 
 export const useDragOverlay = (): DragOverlayContextProps => {
   const context = useContext(DragOverlayContext);
-  if (!context) throw new Error('useDragOverlay must be used within DragOverlayProvider');
+  if (!context)
+    throw new Error("useDragOverlay must be used within DragOverlayProvider");
   return context;
 };

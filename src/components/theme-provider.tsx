@@ -36,7 +36,7 @@ export function ThemeProvider({
     () =>
       (typeof window !== "undefined" &&
         (localStorage.getItem(storageKey) as Theme)) ||
-      defaultTheme
+      defaultTheme,
   );
 
   useEffect(() => {
