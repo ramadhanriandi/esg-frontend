@@ -9,7 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ThemeToggle } from "../../theme-toggle";
+// import { ThemeToggle } from "../../theme-toggle";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import {
@@ -20,7 +20,7 @@ import {
   CardTitle,
 } from "../../ui/card";
 import { Label } from "../../ui/label";
-import { useLgtAuth } from "@/authentication/use-lgt-auth-hook";
+// import { useLgtAuth } from "@/authentication/use-lgt-auth-hook";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
+import { useAuthenticator } from "@aws-amplify/ui-react";
 
 const updates = [
   {
@@ -67,13 +68,15 @@ const updates = [
 export default function HomePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const authContext = useLgtAuth();
+  // const authContext = useLgtAuth();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState("");
   const [formData, setFormData] = useState({
     userId: "",
   });
+
+  const { signOut } = useAuthenticator();
 
   const form = useForm({
     defaultValues: {
@@ -82,26 +85,26 @@ export default function HomePage() {
     mode: "onChange",
     reValidateMode: "onChange",
   });
-  const onSubmit = async () => {
-    setLoading(true);
-    try {
-      const trimmed = formData.userId.trim();
-      if (trimmed === "") {
-        toast.error("Please select a user");
-        setLoading(false);
-        return;
-      }
-      await authContext.login(trimmed);
-      const redirectTo = "/dashboard"; //(location.state as any)?.from?.pathname ||
-      navigate(redirectTo, { replace: true });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "An unknown error occurred";
-      toast.error("Error:", {
-        description: message,
-      });
-    }
-  };
+  // const onSubmit = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const trimmed = formData.userId.trim();
+  //     if (trimmed === "") {
+  //       toast.error("Please select a user");
+  //       setLoading(false);
+  //       return;
+  //     }
+  //     await authContext.login(trimmed);
+  //     const redirectTo = "/dashboard"; //(location.state as any)?.from?.pathname ||
+  //     navigate(redirectTo, { replace: true });
+  //   } catch (error) {
+  //     const message =
+  //       error instanceof Error ? error.message : "An unknown error occurred";
+  //     toast.error("Error:", {
+  //       description: message,
+  //     });
+  //   }
+  // };
 
   function mapToUserOption(users: any[]) {
     return users.map(({ id, name }) => ({ value: id, label: name }));
@@ -124,7 +127,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
+            {/* <ThemeToggle /> */}
           </div>
         </div>
       </header>
@@ -152,63 +155,8 @@ export default function HomePage() {
               <CardDescription>Sign in to your account</CardDescription>
             </CardHeader>
             <CardContent>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-4"
-                >
-                  <div className="space-y-2">
-                    <Label>Username</Label>
-                    {/* <Input
-                    id="username"
-                    type="string"
-                    placeholder="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                  /> */}
-                    <Select
-                      value={formData.userId}
-                      onValueChange={(value: string) =>
-                        setFormData({ ...formData, userId: value })
-                      }
-                    >
-                      <SelectTrigger id="userId">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {mapToUserOption(authContext.users).map((user) => (
-                          <SelectItem key={user.value} value={user.value}>
-                            {user.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {/* <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    // value={password}
-                    // onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div> */}
-                  {error && <p className="text-sm text-destructive">{error}</p>}
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing in...
-                      </>
-                    ) : (
-                      "Sign In"
-                    )}
-                  </Button>
-                </form>
-              </Form>
+            <Button onClick={signOut}>Sign out</Button>
+              
             </CardContent>
           </Card>
         </div>
