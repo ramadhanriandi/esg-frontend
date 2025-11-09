@@ -1,4 +1,3 @@
-
 // import { ThemeToggle } from "../../theme-toggle";
 import { useEcoAuth } from "@/authentication/use-eco-auth-hook";
 import { Button } from "../../ui/button";
@@ -9,43 +8,6 @@ import { toast } from "sonner";
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const authContext = useEcoAuth();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    userId: "",
-    password: ""
-  });
-
-  const form = useForm({
-    defaultValues: {
-      userId: "",
-      password: ""
-    },
-    mode: "onChange",
-    reValidateMode: "onChange",
-  });
-  const onSubmit = async () => {
-    setLoading(true);
-    try {
-      const trimmed = formData.userId.trim();
-      if (trimmed === "") {
-        toast.error("Please select a user");
-        setLoading(false);
-        return;
-      }
-      await authContext.login(trimmed);
-      const redirectTo = "/dashboard"; //(location.state as any)?.from?.pathname ||
-      navigate(redirectTo, { replace: true });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "An unknown error occurred";
-      toast.error("Error:", {
-        description: message,
-      });
-    }
-  };
-
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -54,8 +16,18 @@ export default function HomePage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600">
-              <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <svg
+                className="h-5 w-5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
               </svg>
             </div>
             <span className="text-xl font-bold">EcoTrack</span>
@@ -80,11 +52,15 @@ export default function HomePage() {
                 Track Your Data Center ESG Metrics with Confidence
               </h1>
               <p className="text-xl text-muted-foreground text-balance mb-8">
-                Monitor PUE, WUE, and CUE in real-time. Meet compliance standards like BCA-IMDA Green Mark. Optimize for
-                sustainability.
+                Monitor PUE, WUE, and CUE in real-time. Meet compliance
+                standards like BCA-IMDA Green Mark. Optimize for sustainability.
               </p>
               <div className="flex justify-center gap-4">
-                <Button asChild size="lg" className="bg-emerald-600 hover:bg-emerald-700">
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
                   <RouterLink to="/auth/sign-up">Start Free Trial</RouterLink>
                 </Button>
                 <Button asChild size="lg" variant="outline">
@@ -104,7 +80,12 @@ export default function HomePage() {
             <div className="grid md:grid-cols-3 gap-8">
               <div className="flex flex-col items-center text-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
-                  <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="h-6 w-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -115,12 +96,18 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-xl font-semibold">Real-Time Monitoring</h3>
                 <p className="text-muted-foreground text-balance">
-                  Track PUE, WUE, and CUE metrics in real-time with automated calculations and instant alerts.
+                  Track PUE, WUE, and CUE metrics in real-time with automated
+                  calculations and instant alerts.
                 </p>
               </div>
               <div className="flex flex-col items-center text-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100">
-                  <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="h-6 w-6 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -131,12 +118,18 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-xl font-semibold">Compliance Made Easy</h3>
                 <p className="text-muted-foreground text-balance">
-                  Pre-configured thresholds for BCA-IMDA Green Mark, LEED, and other standards.
+                  Pre-configured thresholds for BCA-IMDA Green Mark, LEED, and
+                  other standards.
                 </p>
               </div>
               <div className="flex flex-col items-center text-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100">
-                  <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="h-6 w-6 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -147,7 +140,8 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-xl font-semibold">Open API</h3>
                 <p className="text-muted-foreground text-balance">
-                  Integrate with your existing systems using our comprehensive REST API.
+                  Integrate with your existing systems using our comprehensive
+                  REST API.
                 </p>
               </div>
             </div>
@@ -161,5 +155,5 @@ export default function HomePage() {
         </div>
       </footer>
     </div>
-  )
+  );
 }
