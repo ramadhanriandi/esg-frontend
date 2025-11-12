@@ -1,4 +1,11 @@
-import { BarChart3, Settings, FileText, Code2, Home } from "lucide-react";
+import {
+  BarChart3,
+  Settings,
+  FileText,
+  Code2,
+  Home,
+  LogOut,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,6 +20,8 @@ import {
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Link as RouterLink } from "react-router-dom";
+import { Button } from "./ui/button";
+import { useEcoAuth } from "@/authentication/use-eco-auth-hook";
 
 const menuItems = [
   {
@@ -38,6 +47,11 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
+  const authContext = useEcoAuth();
+
+  const handleLogout = () => {
+    authContext.logout?.();
+  };
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border p-4">
@@ -75,10 +89,18 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-4">
-        <div className="flex items-center justify-between">
+        {/* <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Theme</span>
           <ThemeToggle />
-        </div>
+        </div> */}
+        <Button
+          variant="destructive"
+          className="w-full gap-2 mt-4"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-4 w-4" />
+          Log out
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );

@@ -1,6 +1,5 @@
-// import { ThemeToggle } from "../../theme-toggle";
 import { Button } from "../../ui/button";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 
 export default function HomePage() {
   return (

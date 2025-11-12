@@ -14,7 +14,6 @@ export default function VerifyEmailPage() {
   const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
-    // Get user email from localStorage
     const userData = localStorage.getItem("ecotrack_user");
     if (userData) {
       const parsed = JSON.parse(userData);
@@ -23,11 +22,9 @@ export default function VerifyEmailPage() {
   }, []);
 
   const handleVerify = () => {
-    // Mark as verified
     localStorage.setItem("ecotrack_needs_verification", "false");
     localStorage.setItem("ecotrack_verified", "true");
 
-    // Redirect to onboarding
     navigate("/onboarding");
   };
 
