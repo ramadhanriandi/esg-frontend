@@ -5,7 +5,7 @@ export type EcoAuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   isRestored: boolean;
-  login: (username: string) => Promise<void>;
+  login: (formData: { email: string; password: string }) => Promise<void>;
   logout?: () => void;
   refreshToken?: () => Promise<void>;
   user?: string;
@@ -16,5 +16,5 @@ export type EcoAuthContextType = {
 };
 
 export const EcoAuthContext = createContext<EcoAuthContextType | undefined>(
-  undefined,
+  undefined
 );

@@ -9,57 +9,49 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { amplifyApi } from "@/api/amplify-api";
+import { toast } from "sonner";
+import { Form } from "@/components/ui/form";
+import { useEcoAuth } from "@/authentication/use-eco-auth-hook";
 
 export default function SignUpPage() {
-  const [fullName, setFullName] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [companyEmail, setCompanyEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [repeatPassword, setRepeatPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    company_name: "",
+    password: "",
+  });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const authContext = useEcoAuth();
 
-  const handleSignUp = async (e: FormEvent) => {
-    e.preventDefault();
+  const form = useForm({
+    defaultValues: {
+      email: "",
+      company_name: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async () => {
     setIsLoading(true);
-    setError(null);
-
-    if (password !== repeatPassword) {
-      setError("Passwords do not match");
-      setIsLoading(false);
-      return;
-    }
-
-    // Basic validation
-    if (!fullName || !companyName || !companyEmail || !password) {
-      setError("All fields are required");
-      setIsLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      // Store user data in localStorage
-      const userData = {
-        fullName,
-        companyName,
-        companyEmail,
-        createdAt: new Date().toISOString(),
-      };
-      localStorage.setItem("ecotrack_user", JSON.stringify(userData));
-      //   localStorage.setItem("ecotrack_needs_verification", "true");
-
-      // Redirect to verification page
+      await amplifyApi.post<string>("BackendApi", "/auth/register", formData);
+      toast.success("Account created successfully");
+      await authContext.login({
+        email: formData.email,
+        password: formData.password,
+      });
       navigate("/onboarding");
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "An unknown error occurred";
+      toast.error("Error:", {
+        description: message,
+      });
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -101,84 +93,80 @@ export default function SignUpPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSignUp}>
-                <div className="flex flex-col gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      placeholder="John Doe"
-                      required
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                    />
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+                  <div className="flex flex-col gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="companyName">Company Name</Label>
+                      <Input
+                        id="companyName"
+                        type="text"
+                        placeholder="NUS Co."
+                        required
+                        value={formData.company_name}
+                        onChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            company_name: value.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="john@nus.edu.sg"
+                        required
+                        value={formData.email}
+                        onChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            email: value.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        required
+                        value={formData.password}
+                        onChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            password: value.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    {error && (
+                      <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
+                        {error}
+                      </p>
+                    )}
+                    <Button
+                      type="submit"
+                      className="w-full bg-emerald-600 hover:bg-emerald-700"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Creating account..." : "Create Account"}
+                    </Button>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="companyName">Company Name</Label>
-                    <Input
-                      id="companyName"
-                      type="text"
-                      placeholder="Acme Corp"
-                      required
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="companyEmail">Company Email</Label>
-                    <Input
-                      id="companyEmail"
-                      type="email"
-                      placeholder="john@acme.com"
-                      required
-                      value={companyEmail}
-                      onChange={(e) => setCompanyEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="repeatPassword">Confirm Password</Label>
-                    <Input
-                      id="repeatPassword"
-                      type="password"
-                      required
-                      value={repeatPassword}
-                      onChange={(e) => setRepeatPassword(e.target.value)}
-                    />
-                  </div>
-                  {error && (
-                    <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
-                      {error}
-                    </p>
-                  )}
-                  <Button
-                    type="submit"
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Creating account..." : "Create Account"}
-                  </Button>
-                </div>
-                <div className="mt-4 text-center text-sm">
-                  Already have an account?{" "}
-                  <RouterLink
-                    to="/auth/login"
-                    className="underline underline-offset-4 text-emerald-600 hover:text-emerald-700"
-                  >
-                    Sign in
-                  </RouterLink>
-                </div>
-              </form>
+                </form>
+              </Form>
+              <div className="mt-4 text-center text-sm">
+                Already have an account?{" "}
+                <RouterLink
+                  to="/login"
+                  className="underline underline-offset-4 text-emerald-600 hover:text-emerald-700"
+                >
+                  Sign in
+                </RouterLink>
+              </div>
             </CardContent>
           </Card>
         </div>

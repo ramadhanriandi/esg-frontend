@@ -1,15 +1,9 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark" | "grass";
+type Theme = "light" | "dark";
 
 type ThemeProviderProps = {
-  children: ReactNode;
+  children: React.ReactNode;
   defaultTheme?: Theme;
   storageKey?: string;
 };
@@ -29,29 +23,28 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
   children,
   defaultTheme = "light",
-  storageKey = "risk-management-theme",
+  storageKey = "ecotrack-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () =>
-      (typeof window !== "undefined" &&
-        (localStorage.getItem(storageKey) as Theme)) ||
-      defaultTheme,
-  );
+  const [theme, setTheme] = useState<Theme>(defaultTheme);
+
+  useEffect(() => {
+    const storedTheme = localStorage.getItem(storageKey) as Theme;
+    if (storedTheme) {
+      setTheme(storedTheme);
+    }
+  }, [storageKey]);
 
   useEffect(() => {
     const root = window.document.documentElement;
-
-    root.classList.remove("light", "dark", "grass");
+    root.classList.remove("light", "dark");
     root.classList.add(theme);
-  }, [theme]);
+    localStorage.setItem(storageKey, theme);
+  }, [theme, storageKey]);
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
-    },
+    setTheme,
   };
 
   return (

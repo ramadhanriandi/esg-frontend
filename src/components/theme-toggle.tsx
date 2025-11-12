@@ -1,5 +1,5 @@
-import { Leaf, Moon, Sun } from "lucide-react";
-
+import { Moon, Sun, Leaf } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,7 +7,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useTheme } from "@/components/theme-provider";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -16,20 +15,19 @@ export function ThemeToggle() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:rotate-90 dark:scale-0 grass:rotate-90 grass:scale-0" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 grass:rotate-90 grass:scale-0" />
-          <Leaf className="absolute h-5 w-5 rotate-90 scale-0 transition-all grass:rotate-0 grass:scale-100" />
+          {theme === "light" && <Sun className="h-5 w-5" />}
+          {theme === "dark" && <Moon className="h-5 w-5" />}
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setTheme("light")}>
           <Sun className="mr-2 h-4 w-4" />
-          Light
+          <span>Light</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("dark")}>
           <Moon className="mr-2 h-4 w-4" />
-          Dark
+          <span>Dark</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

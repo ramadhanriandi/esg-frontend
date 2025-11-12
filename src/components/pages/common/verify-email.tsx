@@ -82,7 +82,7 @@ export default function VerifyEmailPage() {
                   variant="outline"
                   className="w-full bg-transparent"
                 >
-                  <a href="/auth/login">Back to Sign In</a>
+                  <a href="/login">Back to Sign In</a>
                 </Button>
               </div>
             </CardContent>

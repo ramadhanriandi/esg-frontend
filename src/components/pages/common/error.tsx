@@ -30,7 +30,7 @@ export default async function ErrorPage({
                 </p>
               )}
               <Button asChild className="w-full">
-                <RouterLink to="/auth/login">Back to Sign In</RouterLink>
+                <RouterLink to="/login">Back to Sign In</RouterLink>
               </Button>
             </CardContent>
           </Card>

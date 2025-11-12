@@ -28,10 +28,10 @@ export default function HomePage() {
           </div>
           <nav className="flex items-center gap-4">
             <Button asChild variant="ghost">
-              <RouterLink to="/auth/login">Sign In</RouterLink>
+              <RouterLink to="/login">Sign In</RouterLink>
             </Button>
             <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
-              <RouterLink to="/auth/sign-up">Get Started</RouterLink>
+              <RouterLink to="/sign-up">Get Started</RouterLink>
             </Button>
           </nav>
         </div>
@@ -55,10 +55,7 @@ export default function HomePage() {
                   size="lg"
                   className="bg-emerald-600 hover:bg-emerald-700"
                 >
-                  <RouterLink to="/auth/sign-up">Start Free Trial</RouterLink>
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <RouterLink to="#features">Learn More</RouterLink>
+                  <RouterLink to="/sign-up">Start Free Trial</RouterLink>
                 </Button>
               </div>
             </div>

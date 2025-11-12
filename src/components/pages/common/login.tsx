@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,16 +9,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useEcoAuth } from "@/authentication/use-eco-auth-hook";
-import { Form, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
+import { Form } from "@/components/ui/form";
 
 export default function LoginPage() {
-  const navigate = useNavigate();
-
   const authContext = useEcoAuth();
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -39,14 +36,10 @@ export default function LoginPage() {
   const onSubmit = async () => {
     setLoading(true);
     try {
-      const trimmed = formData.email.trim();
-      if (trimmed === "") {
-        setLoading(false);
-        return;
+      await authContext.login(formData);
+      if (authContext.isAuthenticated) {
+        navigate("/dashboard");
       }
-      await authContext.login(trimmed);
-      const redirectTo = "/dashboard"; //(location.state as any)?.from?.pathname ||
-      navigate(redirectTo, { replace: true });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "An unknown error occurred";
@@ -54,49 +47,10 @@ export default function LoginPage() {
         description: message,
       });
       setError(message);
+    } finally {
+      setLoading(false);
     }
   };
-
-  // const handleLogin = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setIsLoading(true);
-  //   setError(null);
-
-  //   try {
-  //     const userData = localStorage.getItem("ecotrack_user");
-
-  //     if (!userData) {
-  //       throw new Error("No account found. Please sign up first.");
-  //     }
-
-  //     const user = JSON.parse(userData);
-
-  //     if (user.companyEmail !== email) {
-  //       throw new Error("Invalid email or password");
-  //     }
-
-  //     // Check if verified
-  //     //   const isVerified = localStorage.getItem("ecotrack_verified") === "true";
-
-  //     //   if (!isVerified) {
-  //     //     navigate("/onboarding");
-  //     //     return;
-  //     //   }
-
-  //     // Check if has facilities
-  //     const facilities = localStorage.getItem("ecotrack_facilities");
-
-  //     if (!facilities || JSON.parse(facilities).length === 0) {
-  //       navigate("/onboarding");
-  //     } else {
-  //       navigate("/dashboard");
-  //     }
-  //   } catch (error: unknown) {
-  //     setError(error instanceof Error ? error.message : "An error occurred");
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center p-6 bg-gradient-to-br from-emerald-50 to-teal-50">
@@ -133,7 +87,7 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={onSubmit}>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
                   <div className="flex flex-col gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="email">Email</Label>
@@ -179,17 +133,26 @@ export default function LoginPage() {
                       {isLoading ? "Signing in..." : "Sign In"}
                     </Button>
                   </div>
-                  <div className="mt-4 text-center text-sm">
-                    Don&apos;t have an account?{" "}
-                    <RouterLink
-                      to="/auth/sign-up"
-                      className="underline underline-offset-4 text-emerald-600 hover:text-emerald-700"
-                    >
-                      Create account
-                    </RouterLink>
-                  </div>
                 </form>
               </Form>
+
+              <div className="mt-4 text-center">
+                <RouterLink
+                  to="/"
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Back to home
+                </RouterLink>
+              </div>
+              <div className="mt-4 text-center text-sm">
+                Don&apos;t have an account?{" "}
+                <RouterLink
+                  to="/sign-up"
+                  className="underline underline-offset-4 text-emerald-600 hover:text-emerald-700"
+                >
+                  Create account
+                </RouterLink>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -5,8 +5,6 @@ import { LoadingProgressBar } from "@/components/common/loadingProgressBar";
 
 export const ProtectedRoute = () => {
   const location = useLocation();
-  const hasRedirected = useRef(false);
-
   const authContext = useEcoAuth();
 
   const auth = authContext;
@@ -20,8 +18,7 @@ export const ProtectedRoute = () => {
   }
 
   if (!auth.isAuthenticated) {
-    return;
-    <Navigate to="/" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   return <Outlet />;

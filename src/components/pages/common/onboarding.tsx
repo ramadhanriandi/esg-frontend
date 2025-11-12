@@ -11,24 +11,45 @@ import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, FormEvent } from "react";
 import { Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { amplifyApi } from "@/api/amplify-api";
+import {
+  Select,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 export default function OnboardingPage() {
-  const [facilityName, setFacilityName] = useState("");
-  const [location, setLocation] = useState("");
-  const [sizeSqm, setSizeSqm] = useState("");
-  const [operationalCapacity, setOperationalCapacity] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const navigate = useNavigate();
+  const [sites, setSites] = useState<
+    { site_id: string; name: string; country: string; timezone: string }[]
+  >([]);
+  const [formData, setFormData] = useState({
+    name: "",
+    country: "",
+    timezone: "",
+  });
+
+  const form = useForm({
+    defaultValues: {
+      name: "",
+      country: "",
+      timezone: "",
+    },
+  });
 
   useEffect(() => {
     const checkAuth = () => {
-      const userData = localStorage.getItem("ecotrack_user");
-      const isVerified = localStorage.getItem("ecotrack_verified") === "true";
+      const raw = sessionStorage.getItem("oidc.user");
 
-      if (!userData || !isVerified) {
-        navigate("/auth/login");
+      if (!raw) {
+        navigate("/login");
       } else {
         setIsCheckingAuth(false);
       }
@@ -37,48 +58,27 @@ export default function OnboardingPage() {
     checkAuth();
   }, [navigate]);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    amplifyApi
+      .get<
+        { site_id: string; name: string; country: string; timezone: string }[]
+      >("BackendApi", "/sites")
+      .then((response) => {
+        setSites(response);
+      });
+  }, []);
+
+  const onSubmit = async () => {
     setIsLoading(true);
-    setError(null);
-
     try {
-      const userData = localStorage.getItem("ecotrack_user");
-
-      if (!userData) {
-        throw new Error("Not authenticated");
-      }
-
-      const user = JSON.parse(userData);
-
-      // Get existing facilities or create new array
-      const existingFacilities = localStorage.getItem("ecotrack_facilities");
-      const facilities = existingFacilities
-        ? JSON.parse(existingFacilities)
-        : [];
-
-      // Create new facility
-      const newFacility = {
-        id: `facility-${Date.now()}`,
-        user_email: user.companyEmail,
-        name: facilityName,
-        location: location,
-        size_sqm: sizeSqm ? Number.parseFloat(sizeSqm) : null,
-        operational_capacity_kw: operationalCapacity
-          ? Number.parseFloat(operationalCapacity)
-          : null,
-        created_at: new Date().toISOString(),
-      };
-
-      // Add to facilities array
-      facilities.push(newFacility);
-
-      // Save back to localStorage
-      localStorage.setItem("ecotrack_facilities", JSON.stringify(facilities));
-
       navigate("/dashboard");
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "An unknown error occurred";
+      toast.error("Error:", {
+        description: message,
+      });
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -130,55 +130,77 @@ export default function OnboardingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
                 <div className="flex flex-col gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="facilityName">Facility Name *</Label>
-                    <Input
-                      id="facilityName"
-                      type="text"
-                      placeholder="e.g., Singapore Data Center 1"
-                      required
-                      value={facilityName}
-                      onChange={(e) => setFacilityName(e.target.value)}
-                    />
+                    <Select
+                      value={formData.name}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, name: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select facility" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sites &&
+                          sites.length > 0 &&
+                          sites.map((site) => (
+                            <SelectItem key={site.name} value={site.name}>
+                              {site.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="location">Location *</Label>
-                    <Input
-                      id="location"
-                      type="text"
-                      placeholder="e.g., Singapore, Jurong West"
-                      required
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                    />
+                    <Label htmlFor="country">Country *</Label>
+                    <Select
+                      value={formData.country}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, country: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sites &&
+                          sites.length > 0 &&
+                          sites.map((site) => (
+                            <SelectItem key={site.country} value={site.country}>
+                              {site.country}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="sizeSqm">Size (sq meters)</Label>
-                      <Input
-                        id="sizeSqm"
-                        type="number"
-                        step="0.01"
-                        placeholder="e.g., 5000"
-                        value={sizeSqm}
-                        onChange={(e) => setSizeSqm(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="operationalCapacity">
-                        Operational Capacity (kW)
-                      </Label>
-                      <Input
-                        id="operationalCapacity"
-                        type="number"
-                        step="0.01"
-                        placeholder="e.g., 1000"
-                        value={operationalCapacity}
-                        onChange={(e) => setOperationalCapacity(e.target.value)}
-                      />
-                    </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="timezone">Timezone</Label>
+                    <Select
+                      value={formData.timezone}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, timezone: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sites &&
+                          sites.length > 0 &&
+                          sites.map((site) => (
+                            <SelectItem
+                              key={site.timezone}
+                              value={site.timezone}
+                            >
+                              {site.timezone}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   {error && (
                     <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">

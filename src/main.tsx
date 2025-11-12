@@ -11,6 +11,7 @@ import { NotificationProvider } from "./components/common/notification-provider.
 import { Toaster } from "sonner";
 import { EcoAuthProvider } from "./authentication/EcoAuthProvider.tsx";
 import { ThemeProvider } from "./components/theme-provider.tsx";
+import { parseAmplifyConfig } from "aws-amplify/utils";
 
 if (import.meta.env.VITE_USE_MOCKS === "true") {
   import("./mock/browser.ts").then(({ worker }) => {
@@ -18,7 +19,19 @@ if (import.meta.env.VITE_USE_MOCKS === "true") {
   });
 }
 
-Amplify.configure(outputs);
+const amplifyConfig = parseAmplifyConfig(outputs);
+
+Amplify.configure({
+  ...amplifyConfig,
+  API: {
+    REST: {
+      BackendApi: {
+        endpoint: "http://localhost:8080",
+        region: "ap-southeast-1",
+      },
+    },
+  },
+});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -35,5 +48,5 @@ createRoot(document.getElementById("root")!).render(
         </BrowserRouter>
       </NotificationProvider>
     </ThemeProvider>
-  </StrictMode>,
+  </StrictMode>
 );

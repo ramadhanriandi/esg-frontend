@@ -19,6 +19,6 @@ frontend:
     paths:
       - .npm/**/*
       - node_modules/**/*
-  environment:
-    variables:
-      AMPLIFY_SKIP_BACKEND_BUILD: true
+  # environment:
+  #   variables:
+  # AMPLIFY_SKIP_BACKEND_BUILD: true
