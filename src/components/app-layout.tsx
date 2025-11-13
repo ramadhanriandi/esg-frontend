@@ -45,7 +45,6 @@ const menuItems = [
 
 const LEFT_SIDEBAR_KEY = "riskguard-left-sidebar";
 const RIGHT_SIDEBAR_KEY = "riskguard-right-sidebar";
-const RIGHT_SIDEBAR_TAB_KEY = "riskguard-right-sidebar-tab";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const authContext = useEcoAuth();
@@ -140,7 +139,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             leftSidebarOpen ? "w-64" : "w-16"
           )}
         >
-          <div className="p-2 border-b border-sidebar-border flex-shrink-0">
+          <div className="pt-2 pb-2 border-b border-sidebar-border flex-shrink-0">
             <Button
               variant="ghost"
               size="sm"
@@ -156,7 +155,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
 
           <ScrollArea className="flex-1">
-            <nav className="space-y-1 p-2">
+            <nav>
               {menuItems.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -188,13 +187,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <aside className="flex-shrink-0 w-80 border-l border-border bg-sidebar backdrop-blur-support flex flex-col">
             <div className="flex items-center gap-2 p-4 border-b border-sidebar-border flex-shrink-0">
               <Button
+                className="absolute"
                 variant="ghost"
                 size="icon"
                 onClick={() => setRightSidebarOpen(false)}
               >
                 <X className="h-4 w-4" />
               </Button>
-              Profile
+              <span className="text-lg font-semibold text-center w-full">
+                Profile
+              </span>
             </div>
 
             <ScrollArea className="h-full">

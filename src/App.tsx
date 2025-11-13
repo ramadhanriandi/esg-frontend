@@ -11,6 +11,9 @@ import CompliancePage from "./components/pages/protected/compliance";
 import ReportsPage from "./components/pages/protected/reports";
 import DeveloperPage from "./components/pages/protected/devloper";
 
+import "./App.css";
+import "./index.css";
+
 function App() {
   return (
     <Routes>

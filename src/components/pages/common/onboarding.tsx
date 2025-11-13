@@ -6,10 +6,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -21,6 +20,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { Site } from "@/types/data-types";
 
 export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
@@ -59,13 +59,9 @@ export default function OnboardingPage() {
   }, [navigate]);
 
   useEffect(() => {
-    amplifyApi
-      .get<
-        { site_id: string; name: string; country: string; timezone: string }[]
-      >("BackendApi", "/sites")
-      .then((response) => {
-        setSites(response);
-      });
+    amplifyApi.get<Site>("BackendApi", "/sites").then((response) => {
+      setSites([response]);
+    });
   }, []);
 
   const onSubmit = async () => {
