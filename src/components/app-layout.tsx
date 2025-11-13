@@ -1,5 +1,4 @@
 import {
-  UserIcon,
   Settings,
   FileText,
   Code2,
@@ -30,11 +29,6 @@ const menuItems = [
     title: "Compliance",
     icon: Settings,
     href: "/compliance",
-  },
-  {
-    title: "Reports",
-    icon: FileText,
-    href: "/reports",
   },
   {
     title: "Developer Portal",

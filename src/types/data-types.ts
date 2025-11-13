@@ -29,6 +29,7 @@ export interface SiteFrameworksResponse {
 }
 
 export interface Alert {
+  threshold_value: number;
   alert_id: string;
   site_id: string;
   indicator: string;

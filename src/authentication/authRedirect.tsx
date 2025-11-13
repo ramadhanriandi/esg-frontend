@@ -6,7 +6,6 @@ import { LoadingProgressBar } from "@/components/common/loadingProgressBar";
 export default function AuthRedirect() {
   const auth = useAuth();
   const navigate = useNavigate();
-  // NOTE: Feature flag this
   useEffect(() => {
     if (auth.isAuthenticated) {
       const redirectTo = sessionStorage.getItem("postLoginRedirect") || "/";

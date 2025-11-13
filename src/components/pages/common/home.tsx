@@ -4,7 +4,6 @@ import { Link as RouterLink } from "react-router-dom";
 export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Hero Section */}
       <header className="border-b bg-white">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
@@ -37,7 +36,6 @@ export default function HomePage() {
       </header>
 
       <main className="flex-1">
-        {/* Hero */}
         <section className="bg-gradient-to-br from-emerald-50 to-teal-50 py-20">
           <div className="container mx-auto px-4">
             <div className="mx-auto max-w-3xl text-center">
@@ -61,7 +59,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Features */}
         <section id="features" className="py-20">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center text-balance mb-12">

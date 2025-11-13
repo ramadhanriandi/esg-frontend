@@ -28,6 +28,98 @@ function decodeMockJwt(token?: string): any | null {
   }
 }
 
+type ReportIndicatorSummary = {
+  samples: number;
+  ok: number;
+  warn: number;
+  crit: number;
+  ok_pct: number;
+  warn_pct: number;
+  crit_pct: number;
+  avg: number;
+  min: number;
+  max: number;
+};
+
+type ReportSummary = {
+  site_id: string;
+  framework_code: string;
+  period: {
+    from: string;
+    to: string;
+  };
+  indicators: Record<Indicator, ReportIndicatorSummary>;
+};
+
+function makeReportIndicatorSummary(
+  samples: number,
+  avg: number,
+  okPct: number,
+  warnPct: number,
+  critPct: number
+): ReportIndicatorSummary {
+  const ok = Math.round((samples * okPct) / 100);
+  const warn = Math.round((samples * warnPct) / 100);
+  const crit = samples - ok - warn;
+  const min = avg * 0.95;
+  const max = avg * 1.05;
+  return {
+    samples,
+    ok,
+    warn,
+    crit,
+    ok_pct: Number(okPct.toFixed(2)),
+    warn_pct: Number(warnPct.toFixed(2)),
+    crit_pct: Number(critPct.toFixed(2)),
+    avg: Number(avg.toFixed(6)),
+    min: Number(min.toFixed(6)),
+    max: Number(max.toFixed(6)),
+  };
+}
+
+function buildMockReportSummary(
+  siteId: string,
+  frameworkCode: string,
+  fromIso: string,
+  toIso: string
+): ReportSummary {
+  const site = SITES.find((s) => s.site_id === siteId);
+  let basePue = 1.7;
+  if (site?.name === "DC-SG3") basePue = 1.65;
+  if (site?.name === "DC-SG8") basePue = 1.82;
+  if (site?.name === "DC-SG36") basePue = 2.05;
+
+  const baseWue = 1.0;
+  const baseCue = 0.75;
+  const samples = 96;
+
+  let pueSummary: ReportIndicatorSummary;
+  if (basePue >= 2.0) {
+    pueSummary = makeReportIndicatorSummary(samples, basePue, 55, 30, 15);
+  } else if (basePue >= 1.8) {
+    pueSummary = makeReportIndicatorSummary(samples, basePue, 70, 20, 10);
+  } else {
+    pueSummary = makeReportIndicatorSummary(samples, basePue, 85, 10, 5);
+  }
+
+  const wueSummary = makeReportIndicatorSummary(samples, baseWue, 80, 15, 5);
+  const cueSummary = makeReportIndicatorSummary(samples, baseCue, 82, 13, 5);
+
+  return {
+    site_id: siteId,
+    framework_code: frameworkCode,
+    period: {
+      from: fromIso,
+      to: toIso,
+    },
+    indicators: {
+      PUE: pueSummary,
+      WUE: wueSummary,
+      CUE: cueSummary,
+    },
+  };
+}
+
 function getCompanyIdFromRequest(req: Request): string {
   const auth =
     req.headers.get("authorization") || req.headers.get("Authorization");
@@ -111,7 +203,6 @@ const SITES: MockSite[] = [
   },
 ];
 
-// Reusable sorter (DESC by created_at like your SQL)
 function sortSitesDesc(a: MockSite, b: MockSite) {
   return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
 }
@@ -834,5 +925,104 @@ export const handlers = [
       site_id: siteId,
       ingested,
     });
+  }),
+
+  http.get(`${API_BASE}/reports/summary`, async ({ request }) => {
+    const url = new URL(request.url);
+    const siteId = (
+      url.searchParams.get("site_id") ||
+      SITES[0]?.site_id ||
+      ""
+    ).trim();
+    const frameworkCode = (
+      url.searchParams.get("framework_code") || "GMDC_SG_2024"
+    ).trim();
+    let fromIso = (url.searchParams.get("from") || "").trim();
+    let toIso = (url.searchParams.get("to") || "").trim();
+
+    if (!siteId) {
+      return HttpResponse.json(
+        { message: "site_id required" },
+        { status: 400 }
+      );
+    }
+
+    const siteExists = SITES.some((s) => s.site_id === siteId);
+    if (!siteExists) {
+      return HttpResponse.json({ message: "site not found" }, { status: 404 });
+    }
+
+    if (!fromIso || !toIso) {
+      const now = new Date();
+      const from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      fromIso = from.toISOString();
+      toIso = now.toISOString();
+    }
+
+    const summary = buildMockReportSummary(
+      siteId,
+      frameworkCode,
+      fromIso,
+      toIso
+    );
+    return HttpResponse.json(summary);
+  }),
+
+  http.post(`${API_BASE}/reports`, async ({ request }) => {
+    const claims = getClaimsFromRequest(request);
+    if (!claims.company_id || !claims.user_id) {
+      return HttpResponse.json({ message: "unauthorized" }, { status: 401 });
+    }
+
+    const body = (await request.json().catch(() => ({}))) as {
+      site_id?: string;
+      framework_code?: string;
+      from?: string;
+      to?: string;
+      format?: string;
+    };
+
+    let siteId = (body.site_id || SITES[0]?.site_id || "").trim();
+    const frameworkCode = (body.framework_code || "GMDC_SG_2024").trim();
+    let fromIso = (body.from || "").trim();
+    let toIso = (body.to || "").trim();
+    const fmt = (body.format || "json").trim().toLowerCase();
+
+    if (!siteId) {
+      return HttpResponse.json(
+        { message: "site_id required" },
+        { status: 400 }
+      );
+    }
+
+    const siteExists = SITES.some((s) => s.site_id === siteId);
+    if (!siteExists) {
+      return HttpResponse.json({ message: "site not found" }, { status: 404 });
+    }
+
+    if (!fromIso || !toIso) {
+      const now = new Date();
+      const from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      fromIso = from.toISOString();
+      toIso = now.toISOString();
+    }
+
+    buildMockReportSummary(siteId, frameworkCode, fromIso, toIso);
+
+    const reportId = randomId("rpt");
+    const s3Key = `reports/${siteId}/${frameworkCode}/${reportId}.${fmt}`;
+    const downloadUrl = `${API_BASE}/mock-download/${encodeURIComponent(
+      s3Key
+    )}`;
+
+    return HttpResponse.json(
+      {
+        report_id: reportId,
+        download_url: downloadUrl,
+        s3_key: s3Key,
+        format: fmt,
+      },
+      { status: 201 }
+    );
   }),
 ];

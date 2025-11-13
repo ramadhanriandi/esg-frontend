@@ -200,7 +200,7 @@ print(resp.status_code, resp.json())`;
 
   return (
     <AppLayout>
-      <div>
+      <div className="flex flex-col gap-2 pb-4">
         <h1 className="text-3xl font-bold text-balance">Developer Portal</h1>
         <p className="text-muted-foreground">
           Generate an ingestion token and configure your BMS/DCIM/scripts to
@@ -332,7 +332,6 @@ print(resp.status_code, resp.json())`;
             </Card>
           </TabsContent>
 
-          {/* Docs */}
           <TabsContent value="docs" className="space-y-6">
             <Card>
               <CardHeader>
@@ -442,7 +441,6 @@ print(resp.status_code, resp.json())`;
             </Card>
           </TabsContent>
 
-          {/* Test sender */}
           <TabsContent value="test" className="space-y-6">
             <Card>
               <CardHeader>

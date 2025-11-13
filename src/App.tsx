@@ -8,7 +8,6 @@ import VerifyEmailPage from "./components/pages/common/verify-email";
 import { ProtectedRoute } from "./authentication/authenticationGuard";
 import DashboardPage from "./components/pages/protected/dashboard";
 import CompliancePage from "./components/pages/protected/compliance";
-import ReportsPage from "./components/pages/protected/reports";
 import DeveloperPage from "./components/pages/protected/devloper";
 
 import "./App.css";
@@ -27,7 +26,6 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/compliance" element={<CompliancePage />} />
-        <Route path="/reports" element={<ReportsPage />} />
         <Route path="/developer" element={<DeveloperPage />} />
       </Route>
     </Routes>

@@ -25,7 +25,6 @@ function withJsonHeader(body: unknown, headers?: Headers): Headers | undefined {
   return { "Content-Type": "application/json", ...(headers ?? {}) };
 }
 
-// ----- API wrapper -----
 export const amplifyApi = {
   async get<T = unknown>(
     apiName = "BackendApi",
