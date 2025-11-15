@@ -7,6 +7,7 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
+  Plus,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
@@ -34,6 +35,11 @@ const menuItems = [
     title: "Developer Portal",
     icon: Code2,
     href: "/developer",
+  },
+  {
+    title: "Site",
+    icon: Plus,
+    href: "/site",
   },
 ];
 

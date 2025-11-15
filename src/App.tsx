@@ -12,6 +12,7 @@ import DeveloperPage from "./components/pages/protected/devloper";
 
 import "./App.css";
 import "./index.css";
+import AddSitePage from "./components/pages/protected/site";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/compliance" element={<CompliancePage />} />
         <Route path="/developer" element={<DeveloperPage />} />
+        <Route path="/site" element={<AddSitePage />} />
       </Route>
     </Routes>
   );
