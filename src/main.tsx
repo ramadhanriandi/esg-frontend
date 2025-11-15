@@ -27,8 +27,7 @@ Amplify.configure({
   API: {
     REST: {
       BackendApi: {
-        endpoint:
-          "https://i8dpfh2996.execute-api.ap-southeast-1.amazonaws.com:",
+        endpoint: "https://tr75eb7f04.execute-api.ap-southeast-1.amazonaws.com", //"https://i8dpfh2996.execute-api.ap-southeast-1.amazonaws.com:",
         region: "ap-southeast-1",
       },
     },
