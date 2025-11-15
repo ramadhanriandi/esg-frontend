@@ -12,24 +12,23 @@ import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { amplifyApi } from "@/api/amplify-api";
+import { Input } from "@/components/ui/input";
 import {
   Select,
-  SelectValue,
-  SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { Site, SiteResponse } from "@/types/data-types";
+import { countries } from "@/assets/countries";
+import { EcoCombobox } from "@/components/common/EcoComboBox";
+import { amplifyApi } from "@/api/amplify-api";
 
 export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const navigate = useNavigate();
-  const [sites, setSites] = useState<
-    { site_id: string; name: string; country: string; timezone: string }[]
-  >([]);
   const [formData, setFormData] = useState({
     name: "",
     country: "",
@@ -43,6 +42,8 @@ export default function OnboardingPage() {
       timezone: "",
     },
   });
+
+  const timezones = Intl.supportedValuesOf("timeZone");
 
   useEffect(() => {
     const checkAuth = () => {
@@ -58,15 +59,12 @@ export default function OnboardingPage() {
     checkAuth();
   }, [navigate]);
 
-  useEffect(() => {
-    amplifyApi.get<SiteResponse>("BackendApi", "/sites").then((response) => {
-      setSites(response.sites ?? []);
-    });
-  }, []);
-
   const onSubmit = async () => {
     setIsLoading(true);
     try {
+      await amplifyApi.post<string>("BackendApi", "/sites", formData);
+      toast.success("Site created successfully");
+
       navigate("/dashboard");
     } catch (error) {
       const message =
@@ -130,73 +128,40 @@ export default function OnboardingPage() {
                 <div className="flex flex-col gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="facilityName">Facility Name *</Label>
-                    <Select
+                    <Input
+                      id="facilityName"
+                      type="text"
+                      placeholder="Enter facility name"
                       value={formData.name}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, name: value })
+                      onChange={(value) =>
+                        setFormData({ ...formData, name: value.target.value })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select facility" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sites &&
-                          sites.length > 0 &&
-                          sites.map((site) => (
-                            <SelectItem key={site.name} value={site.name}>
-                              {site.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="country">Country *</Label>
-                    <Select
+                    <EcoCombobox
+                      items={countries}
                       value={formData.country}
-                      onValueChange={(value) =>
+                      onChange={(value) =>
                         setFormData({ ...formData, country: value })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sites &&
-                          sites.length > 0 &&
-                          sites.map((site) => (
-                            <SelectItem key={site.country} value={site.country}>
-                              {site.country}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                      getLabel={(country) => country.name}
+                      getValue={(country) => country.code}
+                    />
                   </div>
 
                   <div className="grid gap-2">
                     <Label htmlFor="timezone">Timezone</Label>
-                    <Select
+                    <EcoCombobox
+                      items={timezones}
                       value={formData.timezone}
-                      onValueChange={(value) =>
+                      onChange={(value) =>
                         setFormData({ ...formData, timezone: value })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select timezone" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sites &&
-                          sites.length > 0 &&
-                          sites.map((site) => (
-                            <SelectItem
-                              key={site.timezone}
-                              value={site.timezone}
-                            >
-                              {site.timezone}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                      getLabel={(timezone) => timezone}
+                      getValue={(timezone) => timezone}
+                    />
                   </div>
                   {error && (
                     <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">

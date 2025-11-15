@@ -16,6 +16,10 @@ export interface FrameworksResponse {
   frameworks: Framework[];
 }
 
+export interface SiteResponse {
+  sites: Site[];
+}
+
 export interface SiteFramework {
   framework_code: string;
   framework_name: string;
