@@ -4,14 +4,11 @@ import App from "./App.tsx";
 import "./index.css";
 
 import { Amplify } from "aws-amplify";
-import outputs from "../amplify_outputs.json";
-import "@aws-amplify/ui-react/styles.css";
 import { BrowserRouter } from "react-router-dom";
 import { NotificationProvider } from "./components/common/notification-provider.tsx";
 import { Toaster } from "sonner";
 import { EcoAuthProvider } from "./authentication/EcoAuthProvider.tsx";
 import { ThemeProvider } from "./components/theme-provider.tsx";
-import { parseAmplifyConfig } from "aws-amplify/utils";
 import { OverlayProvider } from "./components/common/dragOverlayContext.tsx";
 
 // if (import.meta.env.VITE_USE_MOCKS === "true") {
@@ -20,14 +17,13 @@ import { OverlayProvider } from "./components/common/dragOverlayContext.tsx";
 //   });
 // }
 
-const amplifyConfig = parseAmplifyConfig(outputs);
+const apiEndpoint = import.meta.env.VITE_API_URL ?? "https://tr75eb7f04.execute-api.ap-southeast-1.amazonaws.com";
 
 Amplify.configure({
-  ...amplifyConfig,
   API: {
     REST: {
       BackendApi: {
-        endpoint: "https://tr75eb7f04.execute-api.ap-southeast-1.amazonaws.com", //"https://i8dpfh2996.execute-api.ap-southeast-1.amazonaws.com:",
+        endpoint: apiEndpoint,
         region: "ap-southeast-1",
       },
     },
