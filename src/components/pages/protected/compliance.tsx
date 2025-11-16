@@ -332,10 +332,6 @@ export default function CompliancePage() {
   const [frameworkAssignments, setFrameworkAssignments] = useState<
     SiteFrameworkAssignment[]
   >([]);
-  const [activeFrameworkCodes, setActiveFrameworkCodes] = useState<string[]>(
-    []
-  );
-
   const [selectedFrameworkCode, setSelectedFrameworkCode] = useState<string>(
     DEFAULT_FRAMEWORK_CODE
   );
@@ -440,20 +436,26 @@ export default function CompliancePage() {
         const activeCodes = mergedAssignments
           .filter((a) => a.is_active)
           .map((a) => a.framework_code);
-        setActiveFrameworkCodes(activeCodes);
 
-        if (!selectedFrameworkCode) {
-          if (activeCodes.length > 0) {
-            setSelectedFrameworkCode(activeCodes[0]);
-          } else if (mergedAssignments.length > 0) {
-            setSelectedFrameworkCode(mergedAssignments[0].framework_code);
-          }
-        }
+        // keep current selection if still valid; otherwise pick a sensible default
+        setSelectedFrameworkCode((prev) => {
+          const hasPrev = prev
+            ? mergedAssignments.some((a) => a.framework_code === prev)
+            : false;
+
+          if (hasPrev) return prev;
+          if (activeCodes.length > 0) return activeCodes[0];
+          if (mergedAssignments.length > 0)
+            return mergedAssignments[0].framework_code;
+
+          return DEFAULT_FRAMEWORK_CODE;
+        });
 
         setThresholds(thresholdsRes);
         if (thresholdsRes?.rules && thresholdsRes.rules.length > 0) {
           setEditableRules(thresholdsRes.rules);
         } else {
+          // no thresholds yet – seed from preset
           const meta = FRAMEWORK_PRESETS_META[selectedFrameworkCode];
           const defaultMode = meta?.defaultPueMode ?? "STATIC";
           setPueMode(defaultMode);
@@ -484,14 +486,18 @@ export default function CompliancePage() {
     [frameworkAssignments]
   );
 
+  // derive active framework codes from assignments – single source of truth
+  const activeFrameworkCodes = useMemo(
+    () => activeAssignments.map((a) => a.framework_code),
+    [activeAssignments]
+  );
+
   const currentFrameworkMeta: FrameworkPresetMeta | undefined = useMemo(() => {
     if (!selectedFrameworkCode) return undefined;
     return FRAMEWORK_PRESETS_META[selectedFrameworkCode];
   }, [selectedFrameworkCode]);
 
   const handleMultiSelectChange = (codes: string[]) => {
-    setActiveFrameworkCodes(codes);
-
     setFrameworkAssignments((prev) => {
       const prevByCode: Record<string, SiteFrameworkAssignment> = {};
       prev.forEach((a) => {
@@ -518,7 +524,7 @@ export default function CompliancePage() {
 
     setSelectedFrameworkCode((prev) => {
       if (!codes.length) return prev || DEFAULT_FRAMEWORK_CODE;
-      if (codes.includes(prev)) return prev;
+      if (prev && codes.includes(prev)) return prev;
       return codes[0];
     });
   };
@@ -581,7 +587,6 @@ export default function CompliancePage() {
   };
 
   const handleRemoveFramework = (code: string) => {
-    setActiveFrameworkCodes((prev) => prev.filter((c) => c !== code));
     setFrameworkAssignments((prev) =>
       prev.map((a) =>
         a.framework_code === code ? { ...a, is_active: false } : a
@@ -717,6 +722,19 @@ export default function CompliancePage() {
     } finally {
       setIsSavingFrameworks(false);
     }
+  };
+
+  const handlePrecedenceInputChange = (code: string, value: string) => {
+    const numeric = Number(value);
+    if (Number.isNaN(numeric)) return;
+
+    setFrameworkAssignments((prev) => {
+      const next = prev.map((a) =>
+        a.framework_code === code ? { ...a, precedence: numeric } : a
+      );
+      next.sort((a, b) => a.precedence - b.precedence);
+      return next;
+    });
   };
 
   const currentSiteName =
@@ -873,9 +891,22 @@ export default function CompliancePage() {
                               </div>
 
                               <div className="flex items-center gap-2">
-                                <Badge variant="outline">
-                                  Precedence: {a.precedence}
-                                </Badge>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-muted-foreground">
+                                    Precedence
+                                  </span>
+                                  <Input
+                                    type="number"
+                                    className="h-7 w-20 px-2 py-1 text-xs"
+                                    value={a.precedence}
+                                    onChange={(e) =>
+                                      handlePrecedenceInputChange(
+                                        a.framework_code,
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                </div>
                                 <Button
                                   variant="outline"
                                   size="icon"
