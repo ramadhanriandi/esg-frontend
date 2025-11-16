@@ -1,4 +1,3 @@
-// src/api/amplifyApi.ts
 import { get, post, put, del } from "aws-amplify/api";
 
 export type Query = Record<string, string | number | undefined>;

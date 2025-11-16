@@ -84,10 +84,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
     localStorage.setItem(RIGHT_SIDEBAR_KEY, String(rightSidebarOpen));
   }, [rightSidebarOpen]);
 
-  // if (!user) {
-  //   return null;
-  // }
-
   return (
     <div className="h-screen overflow-hidden bg-background flex flex-col">
       <header className="flex-shrink-0 z-50 border-b border-border bg-card/95 backdrop-blur-support ">

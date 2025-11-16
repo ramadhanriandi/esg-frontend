@@ -219,7 +219,7 @@ function buildCorpDefaultRules(): ThresholdRule[] {
       comparator: "<=",
       severity: "WARN",
       value: 1.35,
-      load_band: 60,
+      load_band: 75,
     },
     {
       indicator: "PUE",
@@ -437,7 +437,6 @@ export default function CompliancePage() {
           .filter((a) => a.is_active)
           .map((a) => a.framework_code);
 
-        // keep current selection if still valid; otherwise pick a sensible default
         setSelectedFrameworkCode((prev) => {
           const hasPrev = prev
             ? mergedAssignments.some((a) => a.framework_code === prev)
@@ -455,7 +454,6 @@ export default function CompliancePage() {
         if (thresholdsRes?.rules && thresholdsRes.rules.length > 0) {
           setEditableRules(thresholdsRes.rules);
         } else {
-          // no thresholds yet – seed from preset
           const meta = FRAMEWORK_PRESETS_META[selectedFrameworkCode];
           const defaultMode = meta?.defaultPueMode ?? "STATIC";
           setPueMode(defaultMode);
@@ -486,7 +484,6 @@ export default function CompliancePage() {
     [frameworkAssignments]
   );
 
-  // derive active framework codes from assignments – single source of truth
   const activeFrameworkCodes = useMemo(
     () => activeAssignments.map((a) => a.framework_code),
     [activeAssignments]

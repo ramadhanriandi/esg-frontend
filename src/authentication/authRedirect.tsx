@@ -8,7 +8,8 @@ export default function AuthRedirect() {
   const navigate = useNavigate();
   useEffect(() => {
     if (auth.isAuthenticated) {
-      const redirectTo = sessionStorage.getItem("postLoginRedirect") || "/";
+      const redirectTo =
+        sessionStorage.getItem("postLoginRedirect") || "/login";
       sessionStorage.removeItem("postLoginRedirect");
       navigate(redirectTo);
     }

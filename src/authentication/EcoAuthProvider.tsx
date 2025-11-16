@@ -54,24 +54,22 @@ export const EcoAuthProvider = ({ children }: { children: ReactNode }) => {
           company_id?: string;
         };
 
-      // Decode JWT payload
       const [, payload] = access_token.split(".");
       const decoded = JSON.parse(atob(payload));
 
-      const expiry = Math.floor(Date.now() / 1000) + 3600; // or decoded.exp if present
+      const expiry = Math.floor(Date.now() / 1000) + 3600;
 
       const profile = {
         sub: decoded.sub,
         email: decoded.email,
         roles: decoded.roles ?? [],
-        // prefer name if present, fallback to email or sub
         name: decoded.name ?? decoded.email ?? decoded.sub,
         company_id,
       };
 
       const oidcSession = {
         access_token,
-        id_token: "", // you don't get one; keep shape consistent
+        id_token: "",
         token_type: "Bearer",
         expires_at: expiry,
         profile,
