@@ -271,11 +271,49 @@ export default function DashboardPage() {
         format,
       } as any);
 
-      if (res.download_url) {
-        window.open(res.download_url, "_blank", "noopener");
-        toast.success("Report ready", {
-          description: `Download started (${format.toUpperCase()}).`,
-        });
+      if (res && res.download_url) {
+        const baseFilename = `report-${selectedSiteId}-${fromIso}-${toIso}`;
+
+        if (format === "json") {
+          try {
+            const response = await fetch(res.download_url);
+            if (!response.ok) {
+              throw new Error(`Download failed with status ${response.status}`);
+            }
+
+            const text = await response.text();
+            const blob = new Blob([text], {
+              type: "text/plain;charset=utf-8",
+            });
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${baseFilename}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            toast.success("Report ready", {
+              description: `Download started (${format.toUpperCase()}).`,
+            });
+          } catch (e) {
+            console.error("Failed to download JSON report", e);
+            toast.error("Failed to download JSON report");
+          }
+        } else {
+          const link = document.createElement("a");
+          link.href = res.download_url;
+          link.download = `${baseFilename}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          toast.success("Report ready", {
+            description: `Download started (${format.toUpperCase()}).`,
+          });
+        }
       } else {
         toast.success("Report created", {
           description: `Report generated (${format.toUpperCase()})`,

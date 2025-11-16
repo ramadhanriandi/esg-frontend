@@ -89,7 +89,10 @@ export const amplifyApi = {
       },
     });
 
-    const { body: res } = await op.response;
+    const { body: res, statusCode } = await op.response;
+    if (statusCode === 204) {
+      return undefined as T;
+    }
     return (await res.json()) as T;
   },
 
