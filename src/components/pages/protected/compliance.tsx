@@ -137,14 +137,14 @@ function buildGmdcRules(pueMode: PueMode): ThresholdRule[] {
         comparator: "<=",
         severity: "WARN",
         value: b100.warn,
-        load_band: null,
+        load_band: b100.band,
       },
       {
         indicator: "PUE",
         comparator: "<=",
         severity: "CRIT",
         value: b100.crit,
-        load_band: null,
+        load_band: b100.band,
       }
     );
   }
@@ -193,7 +193,7 @@ function buildGdcrRules(): ThresholdRule[] {
       comparator: "<=",
       severity: "WARN",
       value: 1.3,
-      load_band: null,
+      load_band: 50,
     },
     {
       indicator: "WUE",
@@ -219,14 +219,14 @@ function buildCorpDefaultRules(): ThresholdRule[] {
       comparator: "<=",
       severity: "WARN",
       value: 1.35,
-      load_band: null,
+      load_band: 60,
     },
     {
       indicator: "PUE",
       comparator: "<=",
       severity: "CRIT",
       value: 1.4,
-      load_band: null,
+      load_band: 75,
     },
     {
       indicator: "WUE",
@@ -266,14 +266,14 @@ function buildSlaStrictRules(): ThresholdRule[] {
       comparator: "<=",
       severity: "WARN",
       value: 1.3,
-      load_band: null,
+      load_band: 75,
     },
     {
       indicator: "PUE",
       comparator: "<=",
       severity: "CRIT",
       value: 1.35,
-      load_band: null,
+      load_band: 75,
     },
     {
       indicator: "WUE",
@@ -1135,7 +1135,7 @@ export default function CompliancePage() {
             </Card>
           )}
 
-          {siteId && (
+          {siteId && alerts && (
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -1145,45 +1145,14 @@ export default function CompliancePage() {
                   <div className="flex flex-col gap-2 justify-center w-full">
                     <CardTitle>Alerts (read-only, Journey 2)</CardTitle>
                     <CardDescription>
-                      Current alerts for this site and selected framework.
-                      Metrics ingestion and clear policy will be wired in
-                      Journey 3.
+                      Current alerts for this site and framework. Fully
+                      automated ingestion.
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex flex-wrap items-center gap-3 text-xs">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Framework</Label>
-                    <div className="text-xs">
-                      {FRAMEWORK_PRESETS_META[selectedFrameworkCode]
-                        ?.displayName ?? selectedFrameworkCode}
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="alert-status" className="text-xs">
-                      Status filter
-                    </Label>
-                    <Select
-                      value={alertStatusFilter}
-                      onValueChange={(v: AlertStatusFilter) =>
-                        setAlertStatusFilter(v)
-                      }
-                    >
-                      <SelectTrigger id="alert-status" className="h-8 w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ALL">All</SelectItem>
-                        <SelectItem value="OPEN">Open</SelectItem>
-                        <SelectItem value="CLEARED">Cleared</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {filteredAlerts.length === 0 ? (
+                {alerts.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No alerts for this selection yet.
                   </p>
@@ -1197,7 +1166,7 @@ export default function CompliancePage() {
                       <div>Status</div>
                       <div>Raised at</div>
                     </div>
-                    {filteredAlerts.slice(0, 20).map((a) => (
+                    {alerts.slice(0, 10).map((a) => (
                       <div
                         key={a.alert_id}
                         className="grid grid-cols-6 gap-2 border-b px-3 py-2 text-xs"
