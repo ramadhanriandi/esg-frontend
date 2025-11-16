@@ -29,6 +29,7 @@ export interface SiteFramework {
 
 export interface SiteFrameworksResponse {
   site_id: string;
+  frameworks: SiteFramework[];
 }
 
 export interface Alert {

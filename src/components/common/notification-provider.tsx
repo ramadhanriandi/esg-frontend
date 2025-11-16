@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { Button } from "../ui/button";
 
 type NotificationType = "success" | "error" | "warning";
 
@@ -21,7 +22,7 @@ interface NotificationContextType {
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
-  undefined,
+  undefined
 );
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
@@ -36,7 +37,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         setNotifications((prev) => prev.filter((n) => n.id !== id));
       }, 5000);
     },
-    [],
+    []
   );
 
   const removeNotification = (id: string) => {
@@ -57,7 +58,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
               notification.type === "error" &&
                 "bg-red-500/90 border-red-600 text-white",
               notification.type === "warning" &&
-                "bg-yellow-500/90 border-yellow-600 text-white",
+                "bg-yellow-500/90 border-yellow-600 text-white"
             )}
           >
             {notification.type === "success" && (
@@ -70,12 +71,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
               <AlertTriangle className="h-5 w-5 flex-shrink-0" />
             )}
             <p className="flex-1 text-sm font-medium">{notification.message}</p>
-            <button
+            <Button
               onClick={() => removeNotification(notification.id)}
               className="flex-shrink-0 hover:opacity-70 transition-opacity"
+              variant="ghost"
             >
               <X className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         ))}
       </div>

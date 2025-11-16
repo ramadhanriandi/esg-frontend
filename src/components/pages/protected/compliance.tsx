@@ -26,6 +26,7 @@ import {
   ArrowDown,
   Info,
   RefreshCw,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { amplifyApi } from "@/api/amplify-api";
@@ -40,10 +41,10 @@ import type {
   Alert,
   SiteResponse,
 } from "@/types/data-types";
+import { EcoMultiSelectWithTabs } from "@/components/common/EcoMultiSelect";
 
 type PueMode = "STATIC" | "LOAD_AWARE";
-type Severity = "WARN" | "CRIT";
-type Indicator = "PUE" | "WUE" | "CUE";
+type AlertStatusFilter = "ALL" | "OPEN" | "CLEARED";
 
 interface FrameworkPresetMeta {
   code: string;
@@ -63,6 +64,14 @@ const FRAMEWORK_PRESETS_META: Record<string, FrameworkPresetMeta> = {
       "Aligns to BCA–IMDA Green Mark bands. Platinum ≈ WARN; GoldPLUS ≈ CRIT.",
     defaultPueMode: "LOAD_AWARE",
     supportsLoadAware: true,
+  },
+  GDCR_SG_2034: {
+    code: "GDCR_SG_2034",
+    displayName: "GDCR_SG_2034 (SG Green DC Roadmap)",
+    description:
+      "Singapore Green Data Centre Roadmap targets for PUE/WUE/CUE at 100% IT load.",
+    defaultPueMode: "STATIC",
+    supportsLoadAware: false,
   },
   CORP_DEFAULT: {
     code: "CORP_DEFAULT",
@@ -157,46 +166,50 @@ function buildGmdcRules(pueMode: PueMode): ThresholdRule[] {
     }
   );
 
-  if (pueMode === "LOAD_AWARE") {
-    for (const b of pueBands) {
-      rules.push(
-        {
-          indicator: "CUE",
-          comparator: "<=",
-          severity: "WARN",
-          value: parseFloat((b.warn * GRID_EF_SG).toFixed(3)),
-          load_band: b.band,
-        },
-        {
-          indicator: "CUE",
-          comparator: "<=",
-          severity: "CRIT",
-          value: parseFloat((b.crit * GRID_EF_SG).toFixed(3)),
-          load_band: b.band,
-        }
-      );
+  rules.push(
+    {
+      indicator: "CUE",
+      comparator: "<=",
+      severity: "WARN",
+      value: 0.564,
+      load_band: null,
+    },
+    {
+      indicator: "CUE",
+      comparator: "<=",
+      severity: "CRIT",
+      value: 0.592,
+      load_band: null,
     }
-  } else {
-    const b100 = pueBands.find((b) => b.band === 100)!;
-    rules.push(
-      {
-        indicator: "CUE",
-        comparator: "<=",
-        severity: "WARN",
-        value: parseFloat((b100.warn * GRID_EF_SG).toFixed(3)),
-        load_band: null,
-      },
-      {
-        indicator: "CUE",
-        comparator: "<=",
-        severity: "CRIT",
-        value: parseFloat((b100.crit * GRID_EF_SG).toFixed(3)),
-        load_band: null,
-      }
-    );
-  }
+  );
 
   return rules;
+}
+
+function buildGdcrRules(): ThresholdRule[] {
+  return [
+    {
+      indicator: "PUE",
+      comparator: "<=",
+      severity: "WARN",
+      value: 1.3,
+      load_band: null,
+    },
+    {
+      indicator: "WUE",
+      comparator: "<=",
+      severity: "WARN",
+      value: 2.0,
+      load_band: null,
+    },
+    {
+      indicator: "CUE",
+      comparator: "<=",
+      severity: "WARN",
+      value: parseFloat((1.3 * GRID_EF_SG).toFixed(3)),
+      load_band: null,
+    },
+  ];
 }
 
 function buildCorpDefaultRules(): ThresholdRule[] {
@@ -215,7 +228,6 @@ function buildCorpDefaultRules(): ThresholdRule[] {
       value: 1.4,
       load_band: null,
     },
-    // WUE static
     {
       indicator: "WUE",
       comparator: "<=",
@@ -301,6 +313,8 @@ function buildPresetRules(
   switch (frameworkCode) {
     case "GMDC_SG_2024":
       return buildGmdcRules(pueMode);
+    case "GDCR_SG_2034":
+      return buildGdcrRules();
     case "CORP_DEFAULT":
       return buildCorpDefaultRules();
     case "SLA_STRICT":
@@ -318,6 +332,9 @@ export default function CompliancePage() {
   const [frameworkAssignments, setFrameworkAssignments] = useState<
     SiteFrameworkAssignment[]
   >([]);
+  const [activeFrameworkCodes, setActiveFrameworkCodes] = useState<string[]>(
+    []
+  );
 
   const [selectedFrameworkCode, setSelectedFrameworkCode] = useState<string>(
     DEFAULT_FRAMEWORK_CODE
@@ -335,6 +352,13 @@ export default function CompliancePage() {
   const [isSavingThresholds, setIsSavingThresholds] = useState(false);
   const [isSavingFrameworks, setIsSavingFrameworks] = useState(false);
 
+  const [draggedFrameworkCode, setDraggedFrameworkCode] = useState<
+    string | null
+  >(null);
+
+  const [alertStatusFilter, setAlertStatusFilter] =
+    useState<AlertStatusFilter>("ALL");
+
   useEffect(() => {
     const loadInit = async () => {
       try {
@@ -344,9 +368,9 @@ export default function CompliancePage() {
         ]);
 
         setFrameworks(frameworksRes.frameworks ?? []);
-        setSites(sitesRes.sites ?? []);
+        setSites((sitesRes.sites ?? []) as Site[]);
 
-        if (sitesRes.sites.length > 0) {
+        if (sitesRes.sites && sitesRes.sites.length > 0) {
           setSiteId(sitesRes.sites[0].site_id);
         }
       } catch (err) {
@@ -382,7 +406,7 @@ export default function CompliancePage() {
           }),
         ]);
 
-        const currentAssignments: SiteFrameworkAssignment[] = (
+        let currentAssignments: SiteFrameworkAssignment[] = (
           siteFwRes?.frameworks ?? []
         ).map((f) => ({
           framework_code: f.framework_code,
@@ -391,24 +415,55 @@ export default function CompliancePage() {
           precedence: f.precedence,
         }));
 
-        const knownPresetCodes = Object.keys(FRAMEWORK_PRESETS_META);
-        for (const code of knownPresetCodes) {
-          if (!currentAssignments.find((a) => a.framework_code === code)) {
-            const fw = frameworks.find((f) => f.framework_code === code);
-            currentAssignments.push({
-              framework_code: code,
-              framework_name: fw?.name ?? code,
-              is_active: false,
-              precedence: 999,
-            });
+        const byCode: Record<string, SiteFrameworkAssignment> = {};
+        currentAssignments.forEach((a) => {
+          byCode[a.framework_code] = a;
+        });
+
+        const mergedAssignments: SiteFrameworkAssignment[] = frameworks.map(
+          (f, index) => {
+            const existing = byCode[f.framework_code];
+            return (
+              existing ?? {
+                framework_code: f.framework_code,
+                framework_name: f.name,
+                is_active: false,
+                precedence: (index + 1) * 10,
+              }
+            );
+          }
+        );
+
+        mergedAssignments.sort((a, b) => a.precedence - b.precedence);
+        setFrameworkAssignments(mergedAssignments);
+
+        const activeCodes = mergedAssignments
+          .filter((a) => a.is_active)
+          .map((a) => a.framework_code);
+        setActiveFrameworkCodes(activeCodes);
+
+        if (!selectedFrameworkCode) {
+          if (activeCodes.length > 0) {
+            setSelectedFrameworkCode(activeCodes[0]);
+          } else if (mergedAssignments.length > 0) {
+            setSelectedFrameworkCode(mergedAssignments[0].framework_code);
           }
         }
 
-        currentAssignments.sort((a, b) => a.precedence - b.precedence);
-        setFrameworkAssignments(currentAssignments);
-
         setThresholds(thresholdsRes);
-        setEditableRules(thresholdsRes?.rules ?? []);
+        if (thresholdsRes?.rules && thresholdsRes.rules.length > 0) {
+          setEditableRules(thresholdsRes.rules);
+        } else {
+          const meta = FRAMEWORK_PRESETS_META[selectedFrameworkCode];
+          const defaultMode = meta?.defaultPueMode ?? "STATIC";
+          setPueMode(defaultMode);
+          const presetRules = buildPresetRules(
+            selectedFrameworkCode,
+            defaultMode
+          );
+          setEditableRules(presetRules);
+        }
+
         setAlerts(alertsRes?.alerts ?? []);
       } catch (err) {
         console.error("Failed to load site data", err);
@@ -422,13 +477,51 @@ export default function CompliancePage() {
   }, [siteId, selectedFrameworkCode, frameworks]);
 
   const activeAssignments = useMemo(
-    () => frameworkAssignments.filter((a) => a.is_active),
+    () =>
+      frameworkAssignments
+        .filter((a) => a.is_active)
+        .sort((a, b) => a.precedence - b.precedence),
     [frameworkAssignments]
   );
 
   const currentFrameworkMeta: FrameworkPresetMeta | undefined = useMemo(() => {
+    if (!selectedFrameworkCode) return undefined;
     return FRAMEWORK_PRESETS_META[selectedFrameworkCode];
   }, [selectedFrameworkCode]);
+
+  const handleMultiSelectChange = (codes: string[]) => {
+    setActiveFrameworkCodes(codes);
+
+    setFrameworkAssignments((prev) => {
+      const prevByCode: Record<string, SiteFrameworkAssignment> = {};
+      prev.forEach((a) => {
+        prevByCode[a.framework_code] = a;
+      });
+
+      const next: SiteFrameworkAssignment[] = frameworks.map((f, index) => {
+        const existing = prevByCode[f.framework_code];
+        const isActive = codes.includes(f.framework_code);
+        return {
+          framework_code: f.framework_code,
+          framework_name: f.name,
+          is_active: isActive,
+          precedence:
+            existing?.precedence !== undefined
+              ? existing.precedence
+              : (index + 1) * 10,
+        };
+      });
+
+      next.sort((a, b) => a.precedence - b.precedence);
+      return next;
+    });
+
+    setSelectedFrameworkCode((prev) => {
+      if (!codes.length) return prev || DEFAULT_FRAMEWORK_CODE;
+      if (codes.includes(prev)) return prev;
+      return codes[0];
+    });
+  };
 
   useEffect(() => {
     if (!currentFrameworkMeta) return;
@@ -443,43 +536,86 @@ export default function CompliancePage() {
     setSiteId(value);
   };
 
-  const handleToggleActiveFramework = (code: string) => {
-    setFrameworkAssignments((prev) =>
-      prev.map((a) =>
-        a.framework_code === code ? { ...a, is_active: !a.is_active } : a
-      )
-    );
-  };
-
   const handleMoveFramework = (code: string, direction: "up" | "down") => {
     setFrameworkAssignments((prev) => {
-      const idx = prev.findIndex((a) => a.framework_code === code);
+      const active = prev.filter((a) => a.is_active);
+      const inactive = prev.filter((a) => !a.is_active);
+      const idx = active.findIndex((a) => a.framework_code === code);
       if (idx === -1) return prev;
-      const newArr = [...prev];
       const swapWith = direction === "up" ? idx - 1 : idx + 1;
-      if (swapWith < 0 || swapWith >= newArr.length) return prev;
-      const tmp = newArr[idx];
-      newArr[idx] = newArr[swapWith];
-      newArr[swapWith] = tmp;
-      return newArr.map((a, i) => ({ ...a, precedence: (i + 1) * 10 }));
+      if (swapWith < 0 || swapWith >= active.length) return prev;
+      const reordered = [...active];
+      const tmp = reordered[idx];
+      reordered[idx] = reordered[swapWith];
+      reordered[swapWith] = tmp;
+      const combined = [...reordered, ...inactive];
+      return combined
+        .map((a, i) => ({ ...a, precedence: (i + 1) * 10 }))
+        .sort((a, b) => a.precedence - b.precedence);
+    });
+  };
+
+  const handleDropFramework = (targetCode: string) => {
+    if (!draggedFrameworkCode || draggedFrameworkCode === targetCode) return;
+    setFrameworkAssignments((prev) => {
+      const active = prev.filter((a) => a.is_active);
+      const inactive = prev.filter((a) => !a.is_active);
+
+      const fromIndex = active.findIndex(
+        (a) => a.framework_code === draggedFrameworkCode
+      );
+      const toIndex = active.findIndex((a) => a.framework_code === targetCode);
+
+      if (fromIndex === -1 || toIndex === -1) return prev;
+
+      const reordered = [...active];
+      const [moved] = reordered.splice(fromIndex, 1);
+      reordered.splice(toIndex, 0, moved);
+
+      const combined = [...reordered, ...inactive];
+      return combined
+        .map((a, i) => ({ ...a, precedence: (i + 1) * 10 }))
+        .sort((a, b) => a.precedence - b.precedence);
+    });
+    setDraggedFrameworkCode(null);
+  };
+
+  const handleRemoveFramework = (code: string) => {
+    setActiveFrameworkCodes((prev) => prev.filter((c) => c !== code));
+    setFrameworkAssignments((prev) =>
+      prev.map((a) =>
+        a.framework_code === code ? { ...a, is_active: false } : a
+      )
+    );
+    setSelectedFrameworkCode((prev) => {
+      if (prev !== code) return prev;
+      const remaining = activeAssignments
+        .filter((a) => a.framework_code !== code)
+        .map((a) => a.framework_code);
+      if (remaining.length > 0) return remaining[0];
+      return DEFAULT_FRAMEWORK_CODE;
     });
   };
 
   const handleApplyPreset = async () => {
-    if (!siteId || !selectedFrameworkCode) return;
-    if (!currentFrameworkMeta) {
+    if (!selectedFrameworkCode) return;
+    const meta = FRAMEWORK_PRESETS_META[selectedFrameworkCode];
+    if (!meta) {
       toast.error("No preset metadata for this framework");
       return;
     }
     setIsApplyingPreset(true);
     try {
       const newRules = buildPresetRules(selectedFrameworkCode, pueMode);
-      setEditableRules(newRules);
-
-      toast.success("Preset applied", {
-        description:
-          "Preset thresholds populated. Review and click Save thresholds to persist.",
-      });
+      if (!newRules.length) {
+        toast.error("No preset rules for this framework");
+      } else {
+        setEditableRules(newRules);
+        toast.success("Preset applied", {
+          description:
+            "Preset thresholds populated. Review and click Save thresholds to persist.",
+        });
+      }
     } finally {
       setIsApplyingPreset(false);
     }
@@ -537,6 +673,26 @@ export default function CompliancePage() {
     }
   };
 
+  const handleReloadThresholds = async () => {
+    if (!siteId || !selectedFrameworkCode) return;
+    try {
+      const thresholdsRes = await amplifyApi.get<ThresholdsResponse>(
+        "BackendApi",
+        "/thresholds",
+        {
+          site_id: siteId,
+          framework_code: selectedFrameworkCode,
+        }
+      );
+      setThresholds(thresholdsRes);
+      setEditableRules(thresholdsRes.rules ?? []);
+      toast.success("Thresholds reloaded from saved");
+    } catch (err) {
+      console.error("Failed to reload thresholds", err);
+      toast.error("Failed to reload thresholds");
+    }
+  };
+
   const handleSaveFrameworkAssignments = async () => {
     if (!siteId) return;
     setIsSavingFrameworks(true);
@@ -566,6 +722,15 @@ export default function CompliancePage() {
   const currentSiteName =
     sites.find((s) => s.site_id === siteId)?.name ?? "Selected site";
 
+  const frameworksForThresholdSelect =
+    activeAssignments.length > 0 ? activeAssignments : frameworkAssignments;
+
+  const filteredAlerts = useMemo(() => {
+    if (!alerts) return [];
+    if (alertStatusFilter === "ALL") return alerts;
+    return alerts.filter((a) => a.status === alertStatusFilter);
+  }, [alerts, alertStatusFilter]);
+
   return (
     <AppLayout>
       <div className="flex flex-col gap-2">
@@ -584,7 +749,6 @@ export default function CompliancePage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Step 1: Select site */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -627,7 +791,6 @@ export default function CompliancePage() {
             </CardContent>
           </Card>
 
-          {/* Step 2: Multi-framework selection & precedence */}
           {siteId && (
             <Card>
               <CardHeader>
@@ -638,9 +801,20 @@ export default function CompliancePage() {
                   <div className="flex flex-col gap-2 justify-center w-full">
                     <CardTitle>Frameworks & Precedence</CardTitle>
                     <CardDescription>
-                      Activate one or more frameworks for this site. Lowest
-                      precedence number = highest priority for ops banner.
+                      Activate one or more frameworks for this site. Drag to set
+                      precedence: lower numbers are higher priority in the ops
+                      banner.
                     </CardDescription>
+                    <EcoMultiSelectWithTabs
+                      options={frameworks.map((f) => ({
+                        label: `${f.name}${f.notes ? ` (${f.notes})` : ""}`,
+                        value: f.framework_code,
+                        group: f.jurisdiction ?? "Global",
+                      }))}
+                      value={activeFrameworkCodes}
+                      onChange={handleMultiSelectChange}
+                      placeholder="Select frameworks"
+                    />
                   </div>
                 </div>
               </CardHeader>
@@ -652,78 +826,94 @@ export default function CompliancePage() {
                     <div className="space-y-2">
                       <Label>Active frameworks</Label>
                       <p className="text-xs text-muted-foreground">
-                        CRIT overrides WARN. When multiple frameworks are
-                        active, ops view will follow the highest-precedence
-                        framework, while compliance reports remain
+                        When multiple frameworks are active, all thresholds are
+                        evaluated, but the ops banner follows the
+                        highest-precedence framework. Compliance reports remain
                         framework-specific.
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      {frameworkAssignments.map((a) => {
-                        const presetMeta =
-                          FRAMEWORK_PRESETS_META[a.framework_code];
-                        return (
-                          <div
-                            key={a.framework_code}
-                            className="flex items-center justify-between gap-3 rounded-md border bg-card px-3 py-2"
-                          >
-                            <div className="flex flex-col">
+                      {activeAssignments.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          No active frameworks selected yet.
+                        </p>
+                      ) : (
+                        activeAssignments.map((a) => {
+                          const presetMeta =
+                            FRAMEWORK_PRESETS_META[a.framework_code];
+                          return (
+                            <div
+                              key={a.framework_code}
+                              className="flex items-center justify-between gap-3 rounded-md border bg-card px-3 py-2"
+                              draggable
+                              onDragStart={() =>
+                                setDraggedFrameworkCode(a.framework_code)
+                              }
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={() =>
+                                handleDropFramework(a.framework_code)
+                              }
+                            >
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                  <span className="cursor-grab text-xs text-muted-foreground">
+                                    ⠿
+                                  </span>
+                                  <span className="font-medium">
+                                    {presetMeta?.displayName ??
+                                      a.framework_name ??
+                                      a.framework_code}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {presetMeta?.description ||
+                                    "Framework configured in the database."}
+                                </p>
+                              </div>
+
                               <div className="flex items-center gap-2">
-                                <input
-                                  id={`fw-${a.framework_code}`}
-                                  type="checkbox"
-                                  checked={a.is_active}
-                                  onChange={() =>
-                                    handleToggleActiveFramework(
-                                      a.framework_code
+                                <Badge variant="outline">
+                                  Precedence: {a.precedence}
+                                </Badge>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() =>
+                                    handleMoveFramework(a.framework_code, "up")
+                                  }
+                                >
+                                  <ArrowUp className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() =>
+                                    handleMoveFramework(
+                                      a.framework_code,
+                                      "down"
                                     )
                                   }
-                                  className="h-4 w-4"
-                                />
-                                <Label
-                                  htmlFor={`fw-${a.framework_code}`}
-                                  className="font-medium"
                                 >
-                                  {presetMeta?.displayName ??
-                                    a.framework_name ??
-                                    a.framework_code}
-                                </Label>
+                                  <ArrowDown className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() =>
+                                    handleRemoveFramework(a.framework_code)
+                                  }
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {presetMeta?.description ||
-                                  "Framework configured in the database."}
-                              </p>
                             </div>
-
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline">
-                                Precedence: {a.precedence}
-                              </Badge>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() =>
-                                  handleMoveFramework(a.framework_code, "up")
-                                }
-                              >
-                                <ArrowUp className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() =>
-                                  handleMoveFramework(a.framework_code, "down")
-                                }
-                              >
-                                <ArrowDown className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                      )}
                     </div>
 
                     <div className="flex justify-end">
@@ -741,8 +931,7 @@ export default function CompliancePage() {
             </Card>
           )}
 
-          {/* Step 3: Thresholds for a selected framework */}
-          {siteId && (
+          {siteId && frameworksForThresholdSelect.length > 0 && (
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -750,185 +939,162 @@ export default function CompliancePage() {
                     3
                   </div>
                   <div className="flex flex-col gap-2 justify-center w-full">
-                    <CardTitle>Thresholds per Framework</CardTitle>
+                    <CardTitle>Thresholds for {currentSiteName}</CardTitle>
                     <CardDescription>
-                      Choose a framework, set PUE mode, apply presets, then
-                      tweak and save thresholds for{" "}
-                      <span className="font-medium">{currentSiteName}</span>.
+                      Choose PUE mode, apply a preset per framework, and fine
+                      tune PUE/WUE/CUE thresholds.
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Framework selector for editing context */}
-                <div className="space-y-2">
-                  <Label htmlFor="framework-select">
-                    Framework to configure
-                  </Label>
-                  <Select
-                    value={selectedFrameworkCode}
-                    onValueChange={setSelectedFrameworkCode}
-                  >
-                    <SelectTrigger id="framework-select">
-                      <div className="flex justify-center w-full">
-                        <SelectValue placeholder="Select a framework" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(FRAMEWORK_PRESETS_META).map((code) => (
-                        <SelectItem
-                          key={code}
-                          value={code}
-                          className="flex justify-center w-full"
-                        >
-                          {FRAMEWORK_PRESETS_META[code].displayName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {currentFrameworkMeta && (
-                    <p className="text-xs text-muted-foreground">
-                      {currentFrameworkMeta.description}
-                    </p>
-                  )}
-                </div>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Framework</Label>
+                    <Select
+                      value={selectedFrameworkCode}
+                      onValueChange={setSelectedFrameworkCode}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select framework" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {frameworksForThresholdSelect.map((a) => {
+                          const presetMeta =
+                            FRAMEWORK_PRESETS_META[a.framework_code];
+                          const label =
+                            presetMeta?.displayName ?? a.framework_name;
+                          return (
+                            <SelectItem
+                              key={a.framework_code}
+                              value={a.framework_code}
+                            >
+                              {label}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* PUE mode toggle */}
-                {currentFrameworkMeta && (
                   <div className="space-y-2">
                     <Label>PUE mode</Label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
                       <Button
-                        type="button"
                         variant={pueMode === "STATIC" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setPueMode("STATIC")}
                       >
-                        Static (single PUE limit)
+                        Static (single PUE)
                       </Button>
                       <Button
-                        type="button"
                         variant={
                           pueMode === "LOAD_AWARE" ? "default" : "outline"
                         }
                         size="sm"
-                        disabled={!currentFrameworkMeta.supportsLoadAware}
+                        disabled={!currentFrameworkMeta?.supportsLoadAware}
                         onClick={() => setPueMode("LOAD_AWARE")}
                       >
-                        Load-aware (25/50/75/100% IT load)
+                        Load-aware (25/50/75/100%)
                       </Button>
                     </div>
-                    {!currentFrameworkMeta.supportsLoadAware && (
-                      <p className="text-xs text-muted-foreground">
-                        This framework uses static PUE thresholds only.
-                      </p>
-                    )}
                   </div>
-                )}
+                </div>
 
-                {/* Apply preset */}
-                <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Info className="h-4 w-4" />
-                    <span>
-                      Comparator is{" "}
-                      <code className="px-1 py-0.5 text-xs rounded bg-background border">
-                        {"<="}
-                      </code>
-                      . A breach occurs when measured value{" "}
-                      <strong>&gt; threshold</strong>. CRIT overrides WARN.
-                    </span>
-                  </div>
+                <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Info className="mt-0.5 h-3 w-3" />
+                  <p>
+                    Comparator is{" "}
+                    <span className="font-mono text-[11px]">&lt;=</span>. A
+                    breach occurs when the measured value is greater than the
+                    threshold.{" "}
+                    <span className="font-semibold">CRIT overrides WARN.</span>
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
-                    type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleApplyPreset}
                     disabled={isApplyingPreset || !currentFrameworkMeta}
                   >
-                    <RefreshCw className="mr-1 h-3 w-3" />
-                    {isApplyingPreset ? "Applying..." : "Apply preset"}
+                    <RefreshCw className="mr-2 h-3 w-3" />
+                    {isApplyingPreset ? "Applying preset..." : "Apply preset"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleReloadThresholds}
+                  >
+                    <RefreshCw className="mr-2 h-3 w-3" />
+                    Reload from saved
                   </Button>
                 </div>
 
-                {/* Thresholds list / editor */}
-                {isLoadingSiteData ? (
-                  <Skeleton className="h-32 w-full" />
-                ) : editableRules.length === 0 ? (
+                {editableRules.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    No thresholds configured yet for this framework. Apply a
-                    preset to start.
+                    No thresholds defined yet for this framework. Apply a preset
+                    or add rules via the backend configuration.
                   </p>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>Threshold rules</Label>
-                      {thresholds?.rules && thresholds.rules.length > 0 && (
-                        <Badge variant="outline">
-                          Loaded {thresholds.rules.length} rule
-                          {thresholds.rules.length === 1 ? "" : "s"} from
-                          backend
-                        </Badge>
-                      )}
+                  <div className="rounded-md border overflow-hidden">
+                    <div className="grid grid-cols-6 gap-2 border-b bg-muted px-3 py-2 text-xs font-medium">
+                      <div>Indicator</div>
+                      <div>Severity</div>
+                      <div>Comparator</div>
+                      <div>Load band</div>
+                      <div>Value</div>
+                      <div>Preview</div>
                     </div>
-                    <div className="rounded-md border overflow-hidden">
-                      <div className="grid grid-cols-5 gap-2 border-b bg-muted px-3 py-2 text-xs font-medium">
-                        <div>Indicator</div>
-                        <div>Severity</div>
-                        <div>Load band</div>
-                        <div>Comparator</div>
-                        <div>Threshold value</div>
-                      </div>
-                      {editableRules.map((r, idx) => (
-                        <div
-                          key={`${r.indicator}-${r.severity}-${r.load_band ?? "null"}-${idx}`}
-                          className="grid grid-cols-5 gap-2 border-b px-3 py-2 text-xs items-center"
-                        >
-                          <div className="font-medium">{r.indicator}</div>
-                          <div>
-                            <Badge
-                              variant={
-                                r.severity === "CRIT"
-                                  ? "destructive"
-                                  : "outline"
-                              }
-                              className="uppercase"
-                            >
-                              {r.severity}
-                            </Badge>
-                          </div>
-                          <div>{r.load_band ?? "—"}</div>
-                          <div>
-                            <code className="rounded border bg-background px-1 py-0.5">
-                              {r.comparator}
-                            </code>
-                          </div>
-                          <div>
-                            <Input
-                              type="number"
-                              step="0.001"
-                              value={r.value}
-                              onChange={(e) =>
-                                handleRuleValueChange(idx, e.target.value)
-                              }
-                              className="h-8 text-xs"
-                            />
-                          </div>
+                    {editableRules.map((r, idx) => (
+                      <div
+                        key={`${r.indicator}-${r.severity}-${r.load_band ?? "all"}-${idx}`}
+                        className="grid grid-cols-6 gap-2 border-b px-3 py-2 text-xs items-center"
+                      >
+                        <div>{r.indicator}</div>
+                        <div>
+                          <Badge
+                            variant={
+                              r.severity === "CRIT" ? "destructive" : "outline"
+                            }
+                            className="uppercase"
+                          >
+                            {r.severity}
+                          </Badge>
                         </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Hysteresis and clear policy (2% band, 3 good samples
-                      before clearing) will be implemented in Journey 3 on the
-                      metric ingestion side.
-                    </p>
+                        <div className="font-mono text-[11px]">&lt;=</div>
+                        <div>
+                          {r.load_band
+                            ? `${r.load_band}% IT load`
+                            : "All loads"}
+                        </div>
+                        <div>
+                          <Input
+                            type="number"
+                            className="h-8 w-24"
+                            value={r.value}
+                            onChange={(e) =>
+                              handleRuleValueChange(idx, e.target.value)
+                            }
+                          />
+                        </div>
+                        <div>
+                          If measured{" "}
+                          <span className="font-mono text-[11px]">
+                            &gt; {r.value}
+                          </span>{" "}
+                          → {r.severity} alert
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
 
                 <div className="flex justify-end">
                   <Button
                     onClick={handleSaveThresholds}
-                    disabled={isSavingThresholds || editableRules.length === 0}
+                    disabled={isSavingThresholds}
                   >
                     <Save className="mr-2 h-4 w-4" />
                     {isSavingThresholds ? "Saving..." : "Save thresholds"}
@@ -938,7 +1104,7 @@ export default function CompliancePage() {
             </Card>
           )}
 
-          {siteId && alerts && (
+          {siteId && (
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -948,14 +1114,45 @@ export default function CompliancePage() {
                   <div className="flex flex-col gap-2 justify-center w-full">
                     <CardTitle>Alerts (read-only, Journey 2)</CardTitle>
                     <CardDescription>
-                      Current alerts for this site and framework. Fully
-                      automated ingestion.
+                      Current alerts for this site and selected framework.
+                      Metrics ingestion and clear policy will be wired in
+                      Journey 3.
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {alerts.length === 0 ? (
+                <div className="flex flex-wrap items-center gap-3 text-xs">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Framework</Label>
+                    <div className="text-xs">
+                      {FRAMEWORK_PRESETS_META[selectedFrameworkCode]
+                        ?.displayName ?? selectedFrameworkCode}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="alert-status" className="text-xs">
+                      Status filter
+                    </Label>
+                    <Select
+                      value={alertStatusFilter}
+                      onValueChange={(v: AlertStatusFilter) =>
+                        setAlertStatusFilter(v)
+                      }
+                    >
+                      <SelectTrigger id="alert-status" className="h-8 w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">All</SelectItem>
+                        <SelectItem value="OPEN">Open</SelectItem>
+                        <SelectItem value="CLEARED">Cleared</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {filteredAlerts.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No alerts for this selection yet.
                   </p>
@@ -969,7 +1166,7 @@ export default function CompliancePage() {
                       <div>Status</div>
                       <div>Raised at</div>
                     </div>
-                    {alerts.slice(0, 10).map((a) => (
+                    {filteredAlerts.slice(0, 20).map((a) => (
                       <div
                         key={a.alert_id}
                         className="grid grid-cols-6 gap-2 border-b px-3 py-2 text-xs"
