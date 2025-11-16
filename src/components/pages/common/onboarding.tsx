@@ -13,14 +13,7 @@ import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { countries } from "@/assets/countries";
+import { countries } from "@/components/common/countries";
 import { EcoCombobox } from "@/components/common/EcoComboBox";
 import { amplifyApi } from "@/api/amplify-api";
 

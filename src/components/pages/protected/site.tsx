@@ -14,7 +14,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { EcoCombobox } from "@/components/common/EcoComboBox";
-import { countries } from "@/assets/countries";
+import { countries } from "@/components/common/countries";
 import { amplifyApi } from "@/api/amplify-api";
 import { AppLayout } from "@/components/app-layout";
 

@@ -1,4 +1,3 @@
-// src/utils/countries.ts
 import { countries as countriesMap } from "countries-list";
 
 export type Country = {
